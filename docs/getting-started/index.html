@@ -5,7 +5,7 @@
 <meta name="generator" content="Docusaurus v3.7.0">
 <title data-rh="true">Getting Started | LibriScribe</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:image" content="https://guerra2fernando.github.io/libriscribe/img/libriscribe-social-card.jpg"><meta data-rh="true" name="twitter:image" content="https://guerra2fernando.github.io/libriscribe/img/libriscribe-social-card.jpg"><meta data-rh="true" property="og:url" content="https://guerra2fernando.github.io/libriscribe/docs/getting-started"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Getting Started | LibriScribe"><meta data-rh="true" name="description" content="This guide will walk you through the installation and setup of LibriScribe."><meta data-rh="true" property="og:description" content="This guide will walk you through the installation and setup of LibriScribe."><link data-rh="true" rel="icon" href="/libriscribe/img/favicon.ico"><link data-rh="true" rel="canonical" href="https://guerra2fernando.github.io/libriscribe/docs/getting-started"><link data-rh="true" rel="alternate" href="https://guerra2fernando.github.io/libriscribe/docs/getting-started" hreflang="en"><link data-rh="true" rel="alternate" href="https://guerra2fernando.github.io/libriscribe/docs/getting-started" hreflang="x-default"><link rel="alternate" type="application/rss+xml" href="/libriscribe/blog/rss.xml" title="LibriScribe RSS Feed">
 <link rel="alternate" type="application/atom+xml" href="/libriscribe/blog/atom.xml" title="LibriScribe Atom Feed"><link rel="stylesheet" href="/libriscribe/assets/css/styles.b8d2aa6b.css">
-<script src="/libriscribe/assets/js/runtime~main.14d4ac72.js" defer="defer"></script>
+<script src="/libriscribe/assets/js/runtime~main.28f42e4b.js" defer="defer"></script>
 <script src="/libriscribe/assets/js/main.5fd7092a.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
@@ -13,9 +13,22 @@
 <p>This guide will walk you through the installation and setup of LibriScribe.</p>
 <h2 class="anchor anchorWithStickyNavbar_LWe7" id="prerequisites">Prerequisites<a href="#prerequisites" class="hash-link" aria-label="Direct link to Prerequisites" title="Direct link to Prerequisites">​</a></h2>
 <ul>
-<li><strong>Python 3.7 or later:</strong> Check with <code>python --version</code> or <code>python3 --version</code>.</li>
-<li><strong>pip:</strong> Usually included with Python.</li>
-<li><strong>OpenAI API Key:</strong> Get one from <a href="https://platform.openai.com/" target="_blank" rel="noopener noreferrer">OpenAI website</a>.</li>
+<li>
+<p><strong>Python 3.7 or later:</strong> Check with <code>python --version</code> or <code>python3 --version</code>.</p>
+</li>
+<li>
+<p><strong>pip:</strong> Usually included with Python.</p>
+</li>
+<li>
+<p><strong>LLM API Key:</strong> Get an API key from one of the following services:</p>
+<ul>
+<li><strong>OpenAI:</strong> <a href="https://platform.openai.com/signup/" target="_blank" rel="noopener noreferrer">Get API Key</a></li>
+<li><strong>Anthropic:</strong> <a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer">Get API Key</a></li>
+<li><strong>DeepSeek:</strong> <a href="https://platform.deepseek.com/" target="_blank" rel="noopener noreferrer">Get API Key</a></li>
+<li><strong>Google AI Studio (Gemini):</strong> <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer">Get API Key</a></li>
+<li><strong>Mistral AI:</strong> <a href="https://console.mistral.ai/" target="_blank" rel="noopener noreferrer">Get API Key</a></li>
+</ul>
+</li>
 </ul>
 <h2 class="anchor anchorWithStickyNavbar_LWe7" id="installation-steps">Installation Steps<a href="#installation-steps" class="hash-link" aria-label="Direct link to Installation Steps" title="Direct link to Installation Steps">​</a></h2>
 <ol>
@@ -29,15 +42,15 @@
 <p>This installs LibriScribe so that changes to the source code are reflected immediately.</p>
 </li>
 <li>
-<p><strong>Set up your OpenAI API Key:</strong></p>
+<p><strong>Set up your LLM API Key:</strong></p>
 <ul>
 <li>
 <p>Create a <code>.env</code> file in the <em>root</em> directory of the project.</p>
 </li>
 <li>
 <p>Add your key:</p>
-<div class="codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_biex"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token plain">OPENAI_API_KEY=your_openai_api_key_here</span><br></span></code></pre><div class="buttonGroup__atx"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_eSgA" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_y97N"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_LjdS"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
-<p>Replace <code>your_openai_api_key_here</code>.  Make sure <code>.env</code> is in your <code>.gitignore</code>!</p>
+<div class="codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_biex"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#393A34"><span class="token plain">OPENAI_API_KEY=your_api_key_here</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">GOOGLE_AI_STUDIO_API_KEY=your_api_key_here</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">CLAUDE_API_KEY=your_api_key_here</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">DEEPSEEK_API_KEY=your_api_key_here</span><br></span><span class="token-line" style="color:#393A34"><span class="token plain">MISTRAL_API_KEY=your_api_key_here</span><br></span></code></pre><div class="buttonGroup__atx"><button type="button" aria-label="Copy code to clipboard" title="Copy" class="clean-btn"><span class="copyButtonIcons_eSgA" aria-hidden="true"><svg viewBox="0 0 24 24" class="copyButtonIcon_y97N"><path fill="currentColor" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"></path></svg><svg viewBox="0 0 24 24" class="copyButtonSuccessIcon_LjdS"><path fill="currentColor" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"></path></svg></span></button></div></div></div>
+<p>Replace <code>your_api_key_here</code> of the LLM that you want to use.  Make sure <code>.env</code> is in your <code>.gitignore</code>!</p>
 </li>
 </ul>
 </li>
