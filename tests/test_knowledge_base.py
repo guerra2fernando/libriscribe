@@ -30,7 +30,7 @@ def test_project_knowledge_base_creation() -> None:
         language="en",
         book_length="medium",
         num_characters="2-3",
-        num_chapters=3
+        num_chapters=3,
     )
     assert kb.project_name == "Test Project"
     assert kb.book_title == "Test Book"

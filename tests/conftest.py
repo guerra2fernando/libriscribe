@@ -6,10 +6,10 @@ to enable consistent and isolated testing across the LibriScribe test suite.
 """
 
 from typing import List, Optional
+from unittest.mock import Mock
 
 import pytest
 from pydantic import BaseModel
-from unittest.mock import Mock
 
 
 class MockCharacter(BaseModel):
@@ -114,5 +114,5 @@ def sample_project_knowledge_base() -> MockProjectKnowledgeBase:
         language="en",
         book_length="medium",
         num_characters="2-3",
-        num_chapters=3
+        num_chapters=3,
     )
