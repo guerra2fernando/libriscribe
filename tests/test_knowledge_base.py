@@ -1,5 +1,5 @@
 import pytest
-from conftest import MockProjectKnowledgeBase, MockCharacter
+from tests.conftest import MockProjectKnowledgeBase, MockCharacter
 
 def test_project_knowledge_base_creation():
     kb = MockProjectKnowledgeBase(
