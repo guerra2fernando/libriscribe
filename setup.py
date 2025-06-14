@@ -3,8 +3,8 @@ from setuptools import setup, find_packages
 setup(
     name="libriscribe",
     version="0.3.0",
-    packages=find_packages(),
-    package_dir={"libriscribe": "src/libriscribe"},
+    package_dir={"": "src"},  # Tell setuptools packages are under src/
+    packages=find_packages(where="src"),  # Find packages under src/
     install_requires=[
         "typer",
         "openai",
