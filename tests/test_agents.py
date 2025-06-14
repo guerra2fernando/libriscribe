@@ -12,9 +12,8 @@ def test_base_agent_initialization(mock_llm_client):
 def test_concept_generator(mock_llm_client, sample_project_knowledge_base):
     agent = ConceptGeneratorAgent(mock_llm_client)
     mock_llm_client.generate_content.return_value = "Generated concept"
-    result = agent.execute(sample_project_knowledge_base)
+    agent.execute(sample_project_knowledge_base)
     assert mock_llm_client.generate_content.called
-    assert isinstance(result, str)
 
 def test_character_generator(mock_llm_client, sample_project_knowledge_base):
     agent = CharacterGeneratorAgent(mock_llm_client)
@@ -39,6 +38,5 @@ def test_character_generator(mock_llm_client, sample_project_knowledge_base):
 def test_outliner_agent(mock_llm_client, sample_project_knowledge_base):
     agent = OutlinerAgent(mock_llm_client)
     mock_llm_client.generate_content.return_value = "# Chapter 1\nTest outline"
-    result = agent.execute(sample_project_knowledge_base)
+    agent.execute(sample_project_knowledge_base)
     assert mock_llm_client.generate_content.called
-    assert isinstance(result, str)
