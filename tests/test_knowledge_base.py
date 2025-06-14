@@ -9,10 +9,12 @@ dependencies.
 
 import pytest
 
+from typing import List
+
 from tests.conftest import MockCharacter, MockProjectKnowledgeBase
 
 
-def test_project_knowledge_base_creation() -> None:
+def test_project_knowledge_base_creation(sample_project_knowledge_base: MockProjectKnowledgeBase) -> None:
     """
     Test basic creation of a ProjectKnowledgeBase instance.
     
@@ -21,21 +23,11 @@ def test_project_knowledge_base_creation() -> None:
     2. Basic attributes are correctly stored and accessible
     This is a fundamental test that should pass before running more complex scenarios.
     """
-    kb = MockProjectKnowledgeBase(
-        project_name="Test Project",
-        book_title="Test Book",
-        category="fiction",
-        genre="fantasy",
-        description="A test book description",
-        language="en",
-        book_length="medium",
-        num_characters="2-3",
-        num_chapters=3,
-    )
+    kb = sample_project_knowledge_base
     assert kb.project_name == "Test Project"
     assert kb.book_title == "Test Book"
 
-def test_add_character() -> None:
+def test_add_character(sample_project_knowledge_base: MockProjectKnowledgeBase) -> None:
     """
     Test character addition to the knowledge base.
     
@@ -47,17 +39,7 @@ def test_add_character() -> None:
     This test is crucial for ensuring the basic character management 
     functionality works correctly.
     """
-    kb = MockProjectKnowledgeBase(
-        project_name="Test Project",
-        book_title="Test Book",
-        category="fiction",
-        genre="fantasy",
-        description="A test book description",
-        language="en",
-        book_length="medium",
-        num_characters="2-3",
-        num_chapters=3
-    )
+    kb = sample_project_knowledge_base
     
     character = MockCharacter(
         name="Test Character",
@@ -73,7 +55,7 @@ def test_add_character() -> None:
     assert retrieved_character is not None
     assert retrieved_character.name == "Test Character"
 
-def test_get_nonexistent_character() -> None:
+def test_get_nonexistent_character(sample_project_knowledge_base: MockProjectKnowledgeBase) -> None:
     """
     Test behavior when requesting a non-existent character.
     
@@ -84,22 +66,12 @@ def test_get_nonexistent_character() -> None:
     This test ensures proper error handling and prevents issues with
     undefined character references.
     """
-    kb = MockProjectKnowledgeBase(
-        project_name="Test Project",
-        book_title="Test Book",
-        category="fiction",
-        genre="fantasy",
-        description="A test book description",
-        language="en",
-        book_length="medium",
-        num_characters="2-3",
-        num_chapters=3
-    )
+    kb = sample_project_knowledge_base
     
     retrieved_character = kb.get_character("Nonexistent Character")
     assert retrieved_character is None
 
-def test_multiple_characters() -> None:
+def test_multiple_characters(sample_project_knowledge_base: MockProjectKnowledgeBase) -> None:
     """
     Test handling of multiple characters in the knowledge base.
     
@@ -112,19 +84,9 @@ def test_multiple_characters() -> None:
     This test ensures the system can handle realistic book scenarios
     with multiple characters.
     """
-    kb = MockProjectKnowledgeBase(
-        project_name="Test Project",
-        book_title="Test Book",
-        category="fiction",
-        genre="fantasy",
-        description="A test book description",
-        language="en",
-        book_length="medium",
-        num_characters="2-3",
-        num_chapters=3
-    )
+    kb = sample_project_knowledge_base
     
-    characters = [
+    characters: List[MockCharacter] = [
         MockCharacter(
             name=f"Character {i}",
             role=f"role {i}",
@@ -150,21 +112,33 @@ def test_project_knowledge_base_validation() -> None:
     Test input validation for project knowledge base creation.
     
     Verifies that:
-    1. Invalid inputs (empty project name) are rejected
+    1. Invalid inputs are rejected
     2. The system raises appropriate validation errors
     
     This test ensures data integrity by preventing the creation of
     invalid or incomplete project knowledge bases.
     """
-    with pytest.raises(ValueError):
-        MockProjectKnowledgeBase(
-            project_name="",  # Empty project name should raise error
-            book_title="Test Book",
-            category="fiction",
-            genre="fantasy",
-            description="A test book description",
-            language="en",
-            book_length="medium",
-            num_characters="2-3",
-            num_chapters=3
-        )
+    invalid_cases = [
+        {"project_name": ""},  # Empty project name
+        {"book_title": ""},    # Empty book title
+        {"num_chapters": -1},  # Invalid chapter count
+        {"category": "invalid_category"},  # Invalid category
+    ]
+    
+    base_params = {
+        "project_name": "Test Project",
+        "book_title": "Test Book",
+        "category": "fiction",
+        "genre": "fantasy",
+        "description": "A test book description",
+        "language": "en",
+        "book_length": "medium",
+        "num_characters": "2-3",
+        "num_chapters": 3
+    }
+    
+    for invalid_case in invalid_cases:
+        test_params = base_params.copy()
+        test_params.update(invalid_case)
+        with pytest.raises(ValueError):
+            MockProjectKnowledgeBase(**test_params)
