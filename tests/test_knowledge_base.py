@@ -1,9 +1,26 @@
+"""
+Test suite for ProjectKnowledgeBase functionality.
+
+These tests verify the core functionality of the ProjectKnowledgeBase class,
+focusing on project metadata management and character handling. The tests use
+mock implementations to isolate the testing of business logic from external
+dependencies.
+"""
+
 import pytest
 
 from tests.conftest import MockCharacter, MockProjectKnowledgeBase
 
 
 def test_project_knowledge_base_creation() -> None:
+    """
+    Test basic creation of a ProjectKnowledgeBase instance.
+    
+    Verifies that:
+    1. The knowledge base can be instantiated with valid parameters
+    2. Basic attributes are correctly stored and accessible
+    This is a fundamental test that should pass before running more complex scenarios.
+    """
     kb = MockProjectKnowledgeBase(
         project_name="Test Project",
         book_title="Test Book",
