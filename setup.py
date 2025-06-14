@@ -17,6 +17,16 @@ setup(
         "fpdf",
         "tenacity",
     ],
+    extras_require={
+        "dev": [
+            "pytest",
+            "pytest-cov",
+            "black",
+            "flake8",
+            "mypy",
+            "isort",
+        ],
+    },
     entry_points={
         "console_scripts": [
             "libriscribe=libriscribe.main:app",  # Updated entry point
