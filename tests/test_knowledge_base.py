@@ -7,9 +7,9 @@ mock implementations to isolate the testing of business logic from external
 dependencies.
 """
 
-import pytest
-
 from typing import List
+
+import pytest
 
 from tests.conftest import MockCharacter, MockProjectKnowledgeBase
 
@@ -47,7 +47,7 @@ def test_add_character(sample_project_knowledge_base: MockProjectKnowledgeBase) 
         description="A test character",
         background="Test background",
         goals="Test goals",
-        personality="Test personality"
+        personality="Test personality",
     )
     
     kb.add_character(character)
@@ -134,7 +134,7 @@ def test_project_knowledge_base_validation() -> None:
         "language": "en",
         "book_length": "medium",
         "num_characters": "2-3",
-        "num_chapters": 3
+        "num_chapters": 3,
     }
     
     for invalid_case in invalid_cases:
