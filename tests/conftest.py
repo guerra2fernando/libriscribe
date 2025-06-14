@@ -21,7 +21,7 @@ def mock_llm_client():
 
 @pytest.fixture
 def sample_project_knowledge_base():
-    return ProjectKnowledgeBase(
+    return MockProjectKnowledgeBase(
         project_name="Test Project",
         book_title="Test Book",
         category="fiction",
