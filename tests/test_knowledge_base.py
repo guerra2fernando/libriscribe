@@ -36,6 +36,17 @@ def test_project_knowledge_base_creation() -> None:
     assert kb.book_title == "Test Book"
 
 def test_add_character() -> None:
+    """
+    Test character addition to the knowledge base.
+    
+    Verifies that:
+    1. A character can be successfully added to the knowledge base
+    2. The character can be retrieved by name after addition
+    3. The retrieved character maintains all its original properties
+    
+    This test is crucial for ensuring the basic character management 
+    functionality works correctly.
+    """
     kb = MockProjectKnowledgeBase(
         project_name="Test Project",
         book_title="Test Book",
@@ -63,6 +74,16 @@ def test_add_character() -> None:
     assert retrieved_character.name == "Test Character"
 
 def test_get_nonexistent_character() -> None:
+    """
+    Test behavior when requesting a non-existent character.
+    
+    Verifies that:
+    1. Requesting a character that doesn't exist returns None
+    2. The system handles missing characters gracefully
+    
+    This test ensures proper error handling and prevents issues with
+    undefined character references.
+    """
     kb = MockProjectKnowledgeBase(
         project_name="Test Project",
         book_title="Test Book",
@@ -79,6 +100,18 @@ def test_get_nonexistent_character() -> None:
     assert retrieved_character is None
 
 def test_multiple_characters() -> None:
+    """
+    Test handling of multiple characters in the knowledge base.
+    
+    Verifies that:
+    1. Multiple characters can be added successfully
+    2. All characters are stored and maintained separately
+    3. Each character can be retrieved individually
+    4. Character count is accurately tracked
+    
+    This test ensures the system can handle realistic book scenarios
+    with multiple characters.
+    """
     kb = MockProjectKnowledgeBase(
         project_name="Test Project",
         book_title="Test Book",
@@ -113,6 +146,16 @@ def test_multiple_characters() -> None:
         assert retrieved.role == f"role {i}"
 
 def test_project_knowledge_base_validation() -> None:
+    """
+    Test input validation for project knowledge base creation.
+    
+    Verifies that:
+    1. Invalid inputs (empty project name) are rejected
+    2. The system raises appropriate validation errors
+    
+    This test ensures data integrity by preventing the creation of
+    invalid or incomplete project knowledge bases.
+    """
     with pytest.raises(ValueError):
         MockProjectKnowledgeBase(
             project_name="",  # Empty project name should raise error
