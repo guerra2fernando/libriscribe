@@ -1,8 +1,8 @@
 # src/libriscribe/agents/agent_base.py
 import logging
-from typing import Any
+from typing import Any, Optional
 
-from libriscribe.utils.llm_client import LLMClient
+from ..utils.llm_client import LLMClient
 
 logger = logging.getLogger(__name__)
 
