@@ -88,12 +88,12 @@ def test_multiple_characters(sample_project_knowledge_base: MockProjectKnowledge
     
     characters: List[MockCharacter] = [
         MockCharacter(
-            name=f"Character {i}",
-            role=f"role {i}",
+            name=f"Character {i}", 
+            role=f"role {i}", 
             description=f"description {i}",
-            background=f"background {i}",
-            goals=f"goals {i}",
-            personality=f"personality {i}"
+            background=f"background {i}", 
+            goals=f"goals {i}", 
+            personality=f"personality {i}",
         )
         for i in range(3)
     ]
@@ -118,9 +118,9 @@ def test_project_knowledge_base_validation() -> None:
     This test ensures data integrity by preventing the creation of
     invalid or incomplete project knowledge bases.
     """
-    invalid_cases = [
+    invalid_cases: List[dict[str, str | int]] = [
         {"project_name": ""},  # Empty project name
-        {"book_title": ""},    # Empty book title
+        {"book_title": ""},  # Empty book title
         {"num_chapters": -1},  # Invalid chapter count
         {"category": "invalid_category"},  # Invalid category
     ]
