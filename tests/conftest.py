@@ -1,4 +1,5 @@
 import pytest
+from typing import Optional, List
 from unittest.mock import Mock
 from pydantic import BaseModel
 
@@ -20,12 +21,12 @@ class MockProjectKnowledgeBase(BaseModel):
     book_length: str
     num_characters: str
     num_chapters: int
-    characters: list[MockCharacter] = []
+    characters: List[MockCharacter] = []
 
     def add_character(self, character: MockCharacter) -> None:
         self.characters.append(character)
 
-    def get_character(self, character_name: str) -> MockCharacter | None:
+    def get_character(self, character_name: str) -> Optional[MockCharacter]:
         for character in self.characters:
             if character.name == character_name:
                 return character
