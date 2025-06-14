@@ -2,6 +2,14 @@ import pytest
 from unittest.mock import Mock
 from pydantic import BaseModel
 
+class MockCharacter(BaseModel):
+    name: str
+    role: str
+    description: str
+    background: str
+    goals: str
+    personality: str
+
 class MockProjectKnowledgeBase(BaseModel):
     project_name: str
     book_title: str
@@ -12,6 +20,16 @@ class MockProjectKnowledgeBase(BaseModel):
     book_length: str
     num_characters: str
     num_chapters: int
+    characters: list[MockCharacter] = []
+
+    def add_character(self, character: MockCharacter) -> None:
+        self.characters.append(character)
+
+    def get_character(self, character_name: str) -> MockCharacter | None:
+        for character in self.characters:
+            if character.name == character_name:
+                return character
+        return None
 
 @pytest.fixture
 def mock_llm_client():
