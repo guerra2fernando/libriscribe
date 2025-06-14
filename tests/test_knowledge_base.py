@@ -1,7 +1,9 @@
 import pytest
-from tests.conftest import MockProjectKnowledgeBase, MockCharacter
 
-def test_project_knowledge_base_creation():
+from tests.conftest import MockCharacter, MockProjectKnowledgeBase
+
+
+def test_project_knowledge_base_creation() -> None:
     kb = MockProjectKnowledgeBase(
         project_name="Test Project",
         book_title="Test Book",
@@ -16,7 +18,7 @@ def test_project_knowledge_base_creation():
     assert kb.project_name == "Test Project"
     assert kb.book_title == "Test Book"
 
-def test_add_character():
+def test_add_character() -> None:
     kb = MockProjectKnowledgeBase(
         project_name="Test Project",
         book_title="Test Book",
@@ -43,7 +45,7 @@ def test_add_character():
     assert retrieved_character is not None
     assert retrieved_character.name == "Test Character"
 
-def test_get_nonexistent_character():
+def test_get_nonexistent_character() -> None:
     kb = MockProjectKnowledgeBase(
         project_name="Test Project",
         book_title="Test Book",
@@ -59,7 +61,7 @@ def test_get_nonexistent_character():
     retrieved_character = kb.get_character("Nonexistent Character")
     assert retrieved_character is None
 
-def test_multiple_characters():
+def test_multiple_characters() -> None:
     kb = MockProjectKnowledgeBase(
         project_name="Test Project",
         book_title="Test Book",
@@ -93,7 +95,7 @@ def test_multiple_characters():
         assert retrieved is not None
         assert retrieved.role == f"role {i}"
 
-def test_project_knowledge_base_validation():
+def test_project_knowledge_base_validation() -> None:
     with pytest.raises(ValueError):
         MockProjectKnowledgeBase(
             project_name="",  # Empty project name should raise error

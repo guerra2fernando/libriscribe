@@ -1,7 +1,9 @@
+from typing import List, Optional
+
 import pytest
-from typing import Optional, List
-from unittest.mock import Mock
 from pydantic import BaseModel
+from unittest.mock import Mock
+
 
 class MockCharacter(BaseModel):
     name: str
@@ -33,13 +35,13 @@ class MockProjectKnowledgeBase(BaseModel):
         return None
 
 @pytest.fixture
-def mock_llm_client():
+def mock_llm_client() -> Mock:
     mock_client = Mock()
     mock_client.generate_content.return_value = "Mock response"
     return mock_client
 
 @pytest.fixture
-def sample_project_knowledge_base():
+def sample_project_knowledge_base() -> MockProjectKnowledgeBase:
     return MockProjectKnowledgeBase(
         project_name="Test Project",
         book_title="Test Book",
