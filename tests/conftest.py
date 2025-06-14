@@ -1,6 +1,17 @@
 import pytest
 from unittest.mock import Mock
-from libriscribe.knowledge_base import ProjectKnowledgeBase
+from pydantic import BaseModel
+
+class MockProjectKnowledgeBase(BaseModel):
+    project_name: str
+    book_title: str
+    category: str
+    genre: str
+    description: str
+    language: str
+    book_length: str
+    num_characters: str
+    num_chapters: int
 
 @pytest.fixture
 def mock_llm_client():
