@@ -1,10 +1,12 @@
 import pytest
-from libriscribe.utils.llm_client import LLMClient
+from unittest.mock import Mock
 from libriscribe.knowledge_base import ProjectKnowledgeBase
 
 @pytest.fixture
 def mock_llm_client():
-    return LLMClient("mock")
+    mock_client = Mock()
+    mock_client.generate_content.return_value = "Mock response"
+    return mock_client
 
 @pytest.fixture
 def sample_project_knowledge_base():
