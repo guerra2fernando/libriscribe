@@ -55,6 +55,14 @@ class LLMClient:
             if not self.settings.openrouter_api_key:
                 raise ValueError("OpenRouter API key is not set.")
             return OpenAI(
+                api_key=self.settings.openrouter_api_key,
+                base_url=self.settings.openrouter_base_url
+            )
+
+        elif self.llm_provider == "openrouter":
+            if not self.settings.openrouter_api_key:
+                raise ValueError("OpenRouter API key is not set.")
+            return OpenAI(
                 api_key=self.settings.openrouter_api_key, base_url=self.settings.openrouter_base_url
             )
         else:
@@ -72,6 +80,9 @@ class LLMClient:
             return "deepseek-coder-6.7b-instruct"
         elif self.llm_provider == "mistral":
             return "mistral-medium-latest"
+
+        elif self.llm_provider == "openrouter":
+            return self.settings.openrouter_model
 
         elif self.llm_provider == "openrouter":
             return self.settings.openrouter_model
@@ -118,6 +129,15 @@ class LLMClient:
                     messages=[{"role": "user", "content": prompt}],
                 )
                 return response.content[0].text.strip()
+
+            elif self.llm_provider == "openrouter":
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                )
+                return response.choices[0].message.content.strip()
 
             elif self.llm_provider == "google_ai_studio":
                 model = self.client.GenerativeModel(model_name=self.model)
