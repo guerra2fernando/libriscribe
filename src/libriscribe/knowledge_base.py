@@ -7,11 +7,13 @@ and character information for book writing projects.
 """
 
 from typing import List, Optional
+
 from pydantic import BaseModel, Field
 
 
 class Scene(BaseModel):
     """A scene within a chapter."""
+
     scene_number: int
     summary: str
     characters: List[str]
@@ -19,15 +21,19 @@ class Scene(BaseModel):
     goal: str
     emotional_beat: str
 
+
 class Chapter(BaseModel):
     """A chapter in the book."""
+
     chapter_number: int
     title: str
     summary: str
     scenes: List[Scene] = []
 
+
 class Character(BaseModel):
     """A character in the book project."""
+
     name: str = Field(..., min_length=1)
     age: str
     physical_description: str
@@ -40,15 +46,17 @@ class Character(BaseModel):
     external_conflicts: str
     character_arc: str
 
+
 class ProjectKnowledgeBase(BaseModel):
     """Manages metadata and story information for a book project."""
+
     project_name: str = Field(..., min_length=1)
     title: str = Field(..., min_length=1)
-    category: str = Field(..., regex="^(fiction|non-fiction)$")
+    category: str = Field(..., pattern="^(fiction|non-fiction)$")
     genre: str = Field(..., min_length=1)
     description: str = Field(..., min_length=1)
-    language: str = Field(..., regex="^[a-z]{2}$")
-    book_length: str = Field(..., regex="^(Short Story|Novella|Novel)$")
+    language: str = Field(..., pattern="^[a-z]{2}$")
+    book_length: str = Field(..., pattern="^(Short Story|Novella|Novel)$")
     num_characters: str = Field(..., min_length=1)
     num_chapters: int = Field(..., gt=0)
     logline: str = ""
