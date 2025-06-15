@@ -1,13 +1,13 @@
 # src/libriscribe/utils/llm_client.py
-import openai
-from openai import OpenAI  # For OpenAI
 import logging
-from tenacity import retry, stop_after_attempt, wait_random_exponential
-from libriscribe.settings import Settings
 
 import anthropic  # For Claude
 import google.generativeai as genai  # For Google AI Studio
 import requests  # For DeepSeek and Mistral
+from openai import OpenAI  # For OpenAI
+from tenacity import retry, stop_after_attempt, wait_random_exponential
+
+from libriscribe.settings import Settings
 
 # ADDED THIS: Import the function
 from libriscribe.utils.file_utils import extract_json_from_markdown
@@ -44,13 +44,13 @@ class LLMClient:
             genai.configure(api_key=self.settings.google_ai_studio_api_key)
             return genai  # We don't instantiate a client, we use the module directly
         elif self.llm_provider == "deepseek":
-             if not self.settings.deepseek_api_key:
+            if not self.settings.deepseek_api_key:
                 raise ValueError("DeepSeek API key is not set.")
-             return None  # No client object, we'll use requests directly
+            return None  # No client object, we'll use requests directly
         elif self.llm_provider == "mistral":
-             if not self.settings.mistral_api_key:
+            if not self.settings.mistral_api_key:
                 raise ValueError("Mistral API key is not set")
-             return None
+            return None
         else:
             raise ValueError(f"Unsupported LLM provider: {self.llm_provider}")
 
@@ -59,29 +59,39 @@ class LLMClient:
         if self.llm_provider == "openai":
             return "gpt-4o-mini"
         elif self.llm_provider == "claude":
-            return "claude-3-opus-20240229" # Or another appropriate Claude 3 model
+            return "claude-3-opus-20240229"  # Or another appropriate Claude 3 model
         elif self.llm_provider == "google_ai_studio":
             return "gemini-1.5-pro-002"
         elif self.llm_provider == "deepseek":
-             return "deepseek-coder-6.7b-instruct"
+            return "deepseek-coder-6.7b-instruct"
         elif self.llm_provider == "mistral":
             return "mistral-medium-latest"
         else:
             return "unknown"  # Should not happen, but good for safety
+
     def set_model(self, model_name: str):
-      self.model = model_name
+        self.model = model_name
 
     @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
-    def generate_content(self, prompt: str, max_tokens: int = 2000, temperature: float = 0.7, language: str = "English") -> str:
+    def generate_content(
+        self,
+        prompt: str,
+        max_tokens: int = 2000,
+        temperature: float = 0.7,
+        language: str = "English",
+    ) -> str:
         """
         Generates text using the selected LLM provider.
         Now supports specifying the output language explicitly.
         """
         try:
             # Append language instruction to prompt if not already included
-            if "IMPORTANT: The content should be written entirely in" not in prompt and language != "English":
+            if (
+                "IMPORTANT: The content should be written entirely in" not in prompt
+                and language != "English"
+            ):
                 prompt += f"\n\nIMPORTANT: Generate the response in {language}."
-                
+
             if self.llm_provider == "openai":
                 response = self.client.chat.completions.create(
                     model=self.model,
@@ -96,67 +106,82 @@ class LLMClient:
                     model=self.model,
                     max_tokens=max_tokens,
                     temperature=temperature,
-                    messages=[{"role": "user", "content": prompt}]
+                    messages=[{"role": "user", "content": prompt}],
                 )
                 return response.content[0].text.strip()
 
             elif self.llm_provider == "google_ai_studio":
                 model = self.client.GenerativeModel(model_name=self.model)
-                response = model.generate_content(prompt) # No need for messages list with genai
+                response = model.generate_content(prompt)  # No need for messages list with genai
                 return response.text.strip()
 
             elif self.llm_provider == "deepseek":
                 headers = {
                     "Content-Type": "application/json",
-                    "Authorization": f"Bearer {self.settings.deepseek_api_key}"
+                    "Authorization": f"Bearer {self.settings.deepseek_api_key}",
                 }
                 data = {
                     "model": self.model,
                     "messages": [{"role": "user", "content": prompt}],
                     "max_tokens": max_tokens,
-                    "temperature": temperature
+                    "temperature": temperature,
                 }
-                response = requests.post("https://api.deepseek.com/v1/chat/completions", headers=headers, json=data, timeout=120) # Timeout
-                response.raise_for_status() # Raise for HTTP errors
+                response = requests.post(
+                    "https://api.deepseek.com/v1/chat/completions",
+                    headers=headers,
+                    json=data,
+                    timeout=120,
+                )  # Timeout
+                response.raise_for_status()  # Raise for HTTP errors
                 return response.json()["choices"][0]["message"]["content"].strip()
             elif self.llm_provider == "mistral":
                 headers = {
                     "Content-Type": "application/json",
-                    "Authorization": f"Bearer {self.settings.mistral_api_key}"
+                    "Authorization": f"Bearer {self.settings.mistral_api_key}",
                 }
                 data = {
                     "model": self.model,
                     "messages": [{"role": "user", "content": prompt}],
                     "max_tokens": max_tokens,
-                    "temperature": temperature
+                    "temperature": temperature,
                 }
 
-                response = requests.post("https://api.mistral.ai/v1/chat/completions", headers=headers, json=data, timeout=120)
+                response = requests.post(
+                    "https://api.mistral.ai/v1/chat/completions",
+                    headers=headers,
+                    json=data,
+                    timeout=120,
+                )
                 response.raise_for_status()
-                return response.json()['choices'][0]['message']['content'].strip()
+                return response.json()["choices"][0]["message"]["content"].strip()
 
             else:
-                return "" #  Should not happen, provider checked in init
+                return ""  #  Should not happen, provider checked in init
 
         except Exception as e:
             logger.exception(f"Error during {self.llm_provider} API call: {e}")
             print(f"ERROR: {self.llm_provider} API error: {e}")
             return ""
+
     @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(3))
-    def generate_content_with_json_repair(self, original_prompt: str, max_tokens:int = 2000, temperature:float=0.7) -> str:
+    def generate_content_with_json_repair(
+        self, original_prompt: str, max_tokens: int = 2000, temperature: float = 0.7
+    ) -> str:
         """Generates content and attempts to repair JSON errors."""
         response_text = self.generate_content(original_prompt, max_tokens, temperature)
         if response_text:
             json_data = extract_json_from_markdown(response_text)
             if json_data is not None:
-                return response_text # Return the original markdown
+                return response_text  # Return the original markdown
             else:
                 repair_prompt = f"You are a helpful AI that only returns valid JSON.  Fix the following broken JSON:\n\n```json\n{response_text}\n```"
-                repaired_response = self.generate_content(repair_prompt, max_tokens=max_tokens, temperature=0.2) #Low temp for corrections
+                repaired_response = self.generate_content(
+                    repair_prompt, max_tokens=max_tokens, temperature=0.2
+                )  # Low temp for corrections
                 if repaired_response:
                     repaired_json = extract_json_from_markdown(repaired_response)
                     if repaired_json is not None:
                         # CRITICAL CHANGE:  Return the JSON *string*, not wrapped in Markdown.
-                        return repaired_response 
+                        return repaired_response
         logger.error("JSON repair failed.")
-        return "" # Return empty
+        return ""  # Return empty

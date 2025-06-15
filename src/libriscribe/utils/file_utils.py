@@ -1,20 +1,25 @@
 # src/libriscribe/utils/file_utils.py
 
 import json
-import os
-from typing import Dict, Any, Optional, Type, TypeVar, Union, List
 import logging
+import os
 from pathlib import Path
+from typing import Any, Dict, Optional, Type, TypeVar, Union
+
 from pydantic import BaseModel, ValidationError  # Import ValidationError
-#NEW IMPORTS
+
+# NEW IMPORTS
 from libriscribe.knowledge_base import ProjectKnowledgeBase
 
 logger = logging.getLogger(__name__)
 
 # Generic type for Pydantic models
-T = TypeVar('T', bound=BaseModel)
+T = TypeVar("T", bound=BaseModel)
 
-def read_json_file(file_path: str, model: Optional[Type[T]] = None) -> Union[Dict[str, Any], T, None]:
+
+def read_json_file(
+    file_path: str, model: Optional[Type[T]] = None
+) -> Union[Dict[str, Any], T, None]:
     """Reads a JSON file, optionally validating it against a Pydantic model."""
     try:
         with open(file_path, "r", encoding="utf-8") as f:
@@ -41,7 +46,9 @@ def read_json_file(file_path: str, model: Optional[Type[T]] = None) -> Union[Dic
         return None
 
 
-def write_json_file(file_path: str, data: Union[Dict[str, Any], BaseModel, ProjectKnowledgeBase]) -> None:
+def write_json_file(
+    file_path: str, data: Union[Dict[str, Any], BaseModel, ProjectKnowledgeBase]
+) -> None:
     """Writes data (dict or Pydantic model) to a JSON file."""
     try:
         Path(file_path).parent.mkdir(parents=True, exist_ok=True)
@@ -57,6 +64,7 @@ def write_json_file(file_path: str, data: Union[Dict[str, Any], BaseModel, Proje
         logger.exception(f"Error writing to JSON file {file_path}: {e}")
         print(f"ERROR: Failed to write to {file_path}. See log.")
 
+
 # The read_markdown and write_markdown will not change, so they remain the same
 def read_markdown_file(file_path: str) -> str:
     """Reads a Markdown file and returns its content as a string."""
@@ -66,11 +74,12 @@ def read_markdown_file(file_path: str) -> str:
     except FileNotFoundError:
         logger.error(f"File not found: {file_path}")
         print(f"ERROR: File not found: {file_path}")
-        return "" # Return empty string.
+        return ""  # Return empty string.
     except Exception as e:
         logger.exception(f"Error reading Markdown file {file_path}: {e}")
         print(f"ERROR: Could not read {file_path}")
         return ""
+
 
 def write_markdown_file(file_path: str, content: str) -> None:
     """Writes a string to a Markdown file."""
@@ -85,6 +94,7 @@ def write_markdown_file(file_path: str, content: str) -> None:
         logger.exception(f"Error writing to Markdown file {file_path}: {e}")
         print(f"ERROR: Failed to write to {file_path}. See log.")
 
+
 def get_chapter_files(project_dir: str) -> list[str]:
     """Gets a sorted list of chapter files in the project directory."""
     chapter_files = []
@@ -94,6 +104,7 @@ def get_chapter_files(project_dir: str) -> list[str]:
     # Sort by chapter number
     chapter_files.sort(key=lambda x: int(x.split("_")[1].split(".")[0]))
     return chapter_files
+
 
 def extract_json_from_markdown(markdown_text: str) -> Optional[Dict[str, Any]]:
     """Extracts JSON from within Markdown code blocks, handling potential errors."""
