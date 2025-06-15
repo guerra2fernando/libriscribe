@@ -79,3 +79,16 @@ class ProjectKnowledgeBase(BaseModel):
             if character.name == character_name:
                 return character
         return None
+
+
+class Worldbuilding(BaseModel):
+    """Worldbuilding information for the book project."""
+    
+    setting: str = ""
+    time_period: str = ""
+    geography: str = ""
+    culture: str = ""
+    technology_level: str = ""
+    magic_system: str = ""
+    political_structure: str = ""
+    economy: str = ""

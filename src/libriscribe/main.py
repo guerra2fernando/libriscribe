@@ -1,3 +1,4 @@
+import sys
 # src/libriscribe/main.py
 import typer
 from libriscribe.agents.project_manager import ProjectManagerAgent
