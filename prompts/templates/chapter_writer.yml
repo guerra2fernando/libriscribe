@@ -1,0 +1,37 @@
+name: "Chapter Writer"
+description: "Writes individual chapters based on scene outlines"
+version: "1.0"
+category: "content_generation"
+cost_tier: "high"
+
+template: |
+  Write Chapter {chapter_number} for "{book_title}" ({genre}).
+  
+  Chapter outline:
+  {chapter_outline}
+  
+  Scene details:
+  {scene_details}
+  
+  Character context:
+  {character_context}
+  
+  Write engaging, well-paced content that advances the plot and develops characters.
+  Use {language} language throughout.
+
+variables:
+  required:
+    - chapter_number
+    - book_title
+    - genre
+    - chapter_outline
+    - scene_details
+    - character_context
+    - language
+
+settings:
+  max_tokens: 6000
+  temperature: 0.8
+  suggested_models:
+    - "gpt-4o"
+    - "claude-3-5-sonnet"
