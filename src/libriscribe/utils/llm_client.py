@@ -20,9 +20,11 @@ httpx_logger.setLevel(logging.WARNING)  # Or ERROR, to suppress even warnings
 
 
 class LLMClient:
+from libriscribe.utils.cost_tracker import CostTracker
     """Unified LLM client for multiple providers."""
 
     def __init__(self, llm_provider: str):
+        self.cost_tracker = CostTracker()
         self.settings = Settings()
         self.llm_provider = llm_provider
         self.client = self._get_client()  # Initialize the correct client
@@ -33,7 +35,7 @@ class LLMClient:
         if self.llm_provider == "openrouter":
             return OpenAI(
                 api_key=self.settings.openrouter_api_key,
-                base_url=self.settings.openrouter_base_url
+                base_url=self.settings.openrouter_base_url,
             )
         elif self.llm_provider == "openai" or self.llm_provider == "openrouter":
             if not self.settings.openai_api_key:
@@ -49,13 +51,13 @@ class LLMClient:
             genai.configure(api_key=self.settings.google_ai_studio_api_key)
             return genai  # We don't instantiate a client, we use the module directly
         elif self.llm_provider == "deepseek":
-             if not self.settings.deepseek_api_key:
+            if not self.settings.deepseek_api_key:
                 raise ValueError("DeepSeek API key is not set.")
-             return None  # No client object, we'll use requests directly
+            return None  # No client object, we'll use requests directly
         elif self.llm_provider == "mistral":
-             if not self.settings.mistral_api_key:
+            if not self.settings.mistral_api_key:
                 raise ValueError("Mistral API key is not set")
-             return None
+            return None
         else:
             raise ValueError(f"Unsupported LLM provider: {self.llm_provider}")
 
@@ -66,110 +68,90 @@ class LLMClient:
         elif self.llm_provider == "openai" or self.llm_provider == "openrouter":
             return "gpt-4o-mini"
         elif self.llm_provider == "claude":
-            return "claude-3-opus-20240229" # Or another appropriate Claude 3 model
+            return "claude-3-opus-20240229"  # Or another appropriate Claude 3 model
         elif self.llm_provider == "google_ai_studio":
             return "gemini-1.5-pro-002"
         elif self.llm_provider == "deepseek":
-             return "deepseek-coder-6.7b-instruct"
+            return "deepseek-coder-6.7b-instruct"
         elif self.llm_provider == "mistral":
             return "mistral-medium-latest"
         else:
             return "unknown"  # Should not happen, but good for safety
+
     def set_model(self, model_name: str):
-      self.model = model_name
+        self.model = model_name
 
     @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
-    def generate_content(self, prompt: str, max_tokens: int = 2000, temperature: float = 0.7, language: str = "English") -> str:
-        """
-        Generates text using the selected LLM provider.
-        Now supports specifying the output language explicitly.
-        """
+    def generate_content(
+        self,
+        prompt: str,
+        max_tokens: int = 2000,
+        temperature: float = 0.7,
+        operation: str = "generate_content"
+    ) -> Optional[str]:
+        """Generate content using the configured LLM with cost tracking."""
+        input_tokens = len(prompt.split()) * 1.3  # Rough estimate
+        
         try:
-            # Append language instruction to prompt if not already included
-            if "IMPORTANT: The content should be written entirely in" not in prompt and language != "English":
-                prompt += f"\n\nIMPORTANT: Generate the response in {language}."
-                
             if self.llm_provider == "openai" or self.llm_provider == "openrouter":
                 response = self.client.chat.completions.create(
                     model=self.model,
-                    messages=[{"role": "user", "content": prompt + "\n\nPlease format any JSON output in markdown code blocks with ```json```" if self.llm_provider == "openrouter" else prompt}],
+                    messages=[
+                        {"role": "system", "content": "You are a helpful assistant."},
+                        {"role": "user", "content": prompt}
+                    ],
                     max_tokens=max_tokens,
-                    temperature=temperature,
+                    temperature=temperature
                 )
-                content = response.choices[0].message.content.strip()
-                # Post-process OpenRouter responses to ensure markdown JSON format
-                if self.llm_provider == "openrouter" and "```json" not in content and "{" in content:
-                    json_match = re.search(r'\{.*\}', content, re.DOTALL)
-                    if json_match:
-                        content = f"```json\n{json_match.group()}\n```"
-                return content
-
-            elif self.llm_provider == "claude":
+                response_text = response.choices[0].message.content
+                
+                # Track actual usage if available
+                if hasattr(response, "usage"):
+                    actual_input = response.usage.prompt_tokens
+                    actual_output = response.usage.completion_tokens
+                else:
+                    actual_input = int(input_tokens)
+                    actual_output = len(response_text.split()) * 1.3
+                
+            elif self.llm_provider == "anthropic":
                 response = self.client.messages.create(
                     model=self.model,
                     max_tokens=max_tokens,
                     temperature=temperature,
                     messages=[{"role": "user", "content": prompt}]
                 )
-                return response.content[0].text.strip()
-
-            elif self.llm_provider == "google_ai_studio":
-                model = self.client.GenerativeModel(model_name=self.model)
-                response = model.generate_content(prompt) # No need for messages list with genai
-                return response.text.strip()
-
-            elif self.llm_provider == "deepseek":
-                headers = {
-                    "Content-Type": "application/json",
-                    "Authorization": f"Bearer {self.settings.deepseek_api_key}"
-                }
-                data = {
-                    "model": self.model,
-                    "messages": [{"role": "user", "content": prompt}],
-                    "max_tokens": max_tokens,
-                    "temperature": temperature
-                }
-                response = requests.post("https://api.deepseek.com/v1/chat/completions", headers=headers, json=data, timeout=120) # Timeout
-                response.raise_for_status() # Raise for HTTP errors
-                return response.json()["choices"][0]["message"]["content"].strip()
-            elif self.llm_provider == "mistral":
-                headers = {
-                    "Content-Type": "application/json",
-                    "Authorization": f"Bearer {self.settings.mistral_api_key}"
-                }
-                data = {
-                    "model": self.model,
-                    "messages": [{"role": "user", "content": prompt}],
-                    "max_tokens": max_tokens,
-                    "temperature": temperature
-                }
-
-                response = requests.post("https://api.mistral.ai/v1/chat/completions", headers=headers, json=data, timeout=120)
-                response.raise_for_status()
-                return response.json()['choices'][0]['message']['content'].strip()
-
+                response_text = response.content[0].text
+                actual_input = getattr(response.usage, "input_tokens", int(input_tokens))
+                actual_output = getattr(response.usage, "output_tokens", len(response_text.split()) * 1.3)
+                
             else:
-                return "" #  Should not happen, provider checked in init
-
+                # Other providers - existing code with estimates
+                response_text = self._handle_other_providers(prompt, max_tokens, temperature)
+                actual_input = int(input_tokens)
+                actual_output = len(response_text.split()) * 1.3 if response_text else 0
+            
+            # Log usage
+            model_key = f"{self.llm_provider}/{self.model}"
+            cost = self.cost_tracker.calculate_cost(model_key, actual_input, actual_output)
+            self.cost_tracker.log_usage(
+                self.llm_provider, self.model, operation,
+                int(actual_input), int(actual_output), cost
+            )
+            
+            return response_text
+            
         except Exception as e:
-            logger.exception(f"Error during {self.llm_provider} API call: {e}")
-            print(f"ERROR: {self.llm_provider} API error: {e}")
-            return ""
-    @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(3))
-    def generate_content_with_json_repair(self, original_prompt: str, max_tokens:int = 2000, temperature:float=0.7) -> str:
-        """Generates content and attempts to repair JSON errors."""
-        response_text = self.generate_content(original_prompt, max_tokens, temperature)
-        if response_text:
-            json_data = extract_json_from_markdown(response_text)
-            if json_data is not None:
-                return response_text # Return the original markdown
+            logger.error(f"Error generating content: {e}")
+            return None
             else:
                 repair_prompt = f"You are a helpful AI that only returns valid JSON.  Fix the following broken JSON:\n\n```json\n{response_text}\n```"
-                repaired_response = self.generate_content(repair_prompt, max_tokens=max_tokens, temperature=0.2) #Low temp for corrections
+                repaired_response = self.generate_content(
+                    repair_prompt, max_tokens=max_tokens, temperature=0.2
+                )  # Low temp for corrections
                 if repaired_response:
                     repaired_json = extract_json_from_markdown(repaired_response)
                     if repaired_json is not None:
                         # CRITICAL CHANGE:  Return the JSON *string*, not wrapped in Markdown.
-                        return repaired_response 
+                        return repaired_response
         logger.error("JSON repair failed.")
-        return "" # Return empty
+        return ""  # Return empty
