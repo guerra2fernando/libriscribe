@@ -8,6 +8,9 @@ class Settings(BaseSettings):
     claude_api_key: str = ""
     deepseek_api_key: str = ""
     mistral_api_key: str = ""
+    openrouter_api_key: str = ""
+    openrouter_base_url: str = "https://openrouter.ai/api/v1"
+    openrouter_model: str = "anthropic/claude-3-haiku"
     projects_dir: str = str(Path(__file__).parent.parent.parent / "projects")
     default_llm: str = "openai" # Set a default
 
