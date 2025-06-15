@@ -30,7 +30,12 @@ class LLMClient:
 
     def _get_client(self):
         """Initializes the appropriate client based on the provider."""
-        if self.llm_provider == "openai":
+        if self.llm_provider == "openrouter":
+            return OpenAI(
+                api_key=self.settings.openrouter_api_key,
+                base_url=self.settings.openrouter_base_url
+            )
+        elif self.llm_provider == "openai":
             if not self.settings.openai_api_key:
                 raise ValueError("OpenAI API key is not set.")
             return OpenAI(api_key=self.settings.openai_api_key)
@@ -56,7 +61,9 @@ class LLMClient:
 
     def _get_default_model(self):
         """Gets the default model name for the selected provider."""
-        if self.llm_provider == "openai":
+        if self.llm_provider == "openrouter":
+            return self.settings.openrouter_model
+        elif self.llm_provider == "openai":
             return "gpt-4o-mini"
         elif self.llm_provider == "claude":
             return "claude-3-opus-20240229" # Or another appropriate Claude 3 model
