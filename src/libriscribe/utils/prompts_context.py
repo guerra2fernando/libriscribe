@@ -1,7 +1,8 @@
 # src/libriscribe/utils/prompts_context.py
 
-from typing import Any, Dict, Optional, List, Union, Tuple
-from libriscribe.knowledge_base import ProjectKnowledgeBase
+
+from libriscribe.knowledge_base import ProjectKnowledgeBase, Worldbuilding
+
 
 def get_worldbuilding_aspects(category: str) -> str:
     """Dynamically returns worldbuilding aspects based on the project category."""
@@ -61,8 +62,9 @@ Appendices: (Supplementary materials, raw data, questionnaires)
     else:
         return ""  # Return empty string for unknown categories
 
-WORLDBUILDING_ASPECTS = { #Keep like this, so we can access it in outliner
-"fiction": """
+
+WORLDBUILDING_ASPECTS = {  # Keep like this, so we can access it in outliner
+    "fiction": """
 
 Geography: (Detailed descriptions of the land, climate, significant locations)
 
@@ -90,7 +92,7 @@ Economy: (Trade, currency, resources, economic systems)
 
 Conflicts: (Past and present wars, rivalries, political tensions)
 """,
-"non-fiction": """
+    "non-fiction": """
 
 Setting/Context: (The time period, location, and relevant background)
 
@@ -108,7 +110,7 @@ Different Perspectives: (Varying viewpoints on the topic)
 
 Key Concepts/Ideas: (Central themes and principles)
 """,
-"business": """
+    "business": """
 
 Industry Overview: (Current state of the industry, trends, major players)
 
@@ -132,7 +134,7 @@ Risks and Challenges: (Potential obstacles and mitigation strategies)
 
 Opportunities for Growth: (Expansion plans, new markets, product development)
 """,
-"research paper": """
+    "research paper": """
 
 Introduction: (Background information, research question, hypothesis)
 
@@ -149,12 +151,12 @@ Conclusion: (Summary of key findings, future research directions)
 References: (List of sources cited)
 
 Appendices: (Supplementary materials, raw data, questionnaires)
-"""
+""",
 }
 
 # --- Prompts ---
 SCENE_OUTLINE_PROMPT = """
-Create a detailed outline for the scenes in a chapter of a {genre} book titled "{title}" which is categorized as {category}. 
+Create a detailed outline for the scenes in a chapter of a {genre} book titled "{title}" which is categorized as {category}.
 The book is written in {language}.
 
 Description: {description}
@@ -439,6 +441,7 @@ Important: Focus on showing rather than telling. Create an immersive experience 
 IMPORTANT: The content should be written entirely in {language}.
 """
 
+
 def clean_worldbuilding_for_category(project_knowledge_base: ProjectKnowledgeBase):
     """
     Clean the worldbuilding object to only keep fields relevant to the project category.
@@ -447,50 +450,76 @@ def clean_worldbuilding_for_category(project_knowledge_base: ProjectKnowledgeBas
     if not project_knowledge_base.worldbuilding_needed or not project_knowledge_base.worldbuilding:
         project_knowledge_base.worldbuilding = None
         return
-        
+
     category = project_knowledge_base.category.lower()
     worldbuilding = project_knowledge_base.worldbuilding
-    
+
     # Get relevant fields for this category
     if category == "fiction":
         relevant_fields = [
-            "geography", "culture_and_society", "history", "rules_and_laws",
-            "technology_level", "magic_system", "key_locations",
-            "important_organizations", "flora_and_fauna", "languages",
-            "religions_and_beliefs", "economy", "conflicts"
+            "geography",
+            "culture_and_society",
+            "history",
+            "rules_and_laws",
+            "technology_level",
+            "magic_system",
+            "key_locations",
+            "important_organizations",
+            "flora_and_fauna",
+            "languages",
+            "religions_and_beliefs",
+            "economy",
+            "conflicts",
         ]
     elif category == "non-fiction":
         relevant_fields = [
-            "setting_context", "key_figures", "major_events", "underlying_causes",
-            "consequences", "relevant_data", "different_perspectives", 
-            "key_concepts"
+            "setting_context",
+            "key_figures",
+            "major_events",
+            "underlying_causes",
+            "consequences",
+            "relevant_data",
+            "different_perspectives",
+            "key_concepts",
         ]
     elif category == "business":
         relevant_fields = [
-            "industry_overview", "target_audience", "market_analysis",
-            "business_model", "marketing_and_sales_strategy", "operations",
-            "financial_projections", "management_team",
-            "legal_and_regulatory_environment", "risks_and_challenges",
-            "opportunities_for_growth"
+            "industry_overview",
+            "target_audience",
+            "market_analysis",
+            "business_model",
+            "marketing_and_sales_strategy",
+            "operations",
+            "financial_projections",
+            "management_team",
+            "legal_and_regulatory_environment",
+            "risks_and_challenges",
+            "opportunities_for_growth",
         ]
     elif category == "research paper":
         relevant_fields = [
-            "introduction", "literature_review", "methodology", "results",
-            "discussion", "conclusion", "references", "appendices"
+            "introduction",
+            "literature_review",
+            "methodology",
+            "results",
+            "discussion",
+            "conclusion",
+            "references",
+            "appendices",
         ]
     else:
         # If category not recognized, keep all fields
         return
-    
+
     # Create clean Worldbuilding object with only relevant fields
     clean_worldbuilding = Worldbuilding()
-    
+
     # Copy only the relevant fields that have content
     for field in relevant_fields:
         if hasattr(worldbuilding, field):
             value = getattr(worldbuilding, field)
             if value and isinstance(value, str) and value.strip():
                 setattr(clean_worldbuilding, field, value)
-    
+
     # Replace with clean version
     project_knowledge_base.worldbuilding = clean_worldbuilding
