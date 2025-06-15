@@ -92,11 +92,17 @@ class LLMClient:
             if self.llm_provider == "openai" or self.llm_provider == "openrouter":
                 response = self.client.chat.completions.create(
                     model=self.model,
-                    messages=[{"role": "user", "content": prompt}],
+                    messages=[{"role": "user", "content": prompt + "\n\nPlease format any JSON output in markdown code blocks with ```json```" if self.llm_provider == "openrouter" else prompt}],
                     max_tokens=max_tokens,
                     temperature=temperature,
                 )
-                return response.choices[0].message.content.strip()
+                content = response.choices[0].message.content.strip()
+                # Post-process OpenRouter responses to ensure markdown JSON format
+                if self.llm_provider == "openrouter" and "```json" not in content and "{" in content:
+                    json_match = re.search(r'\{.*\}', content, re.DOTALL)
+                    if json_match:
+                        content = f"```json\n{json_match.group()}\n```"
+                return content
 
             elif self.llm_provider == "claude":
                 response = self.client.messages.create(
