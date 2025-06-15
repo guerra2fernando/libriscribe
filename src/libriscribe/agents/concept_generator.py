@@ -1,20 +1,19 @@
 # src/libriscribe/agents/concept_generator.py
-import asyncio
 import json
 import logging
-from typing import Any, Dict, List, Optional
-from pathlib import Path
+from typing import Optional
 
-from libriscribe.utils.llm_client import LLMClient
-from libriscribe.utils import prompts_context as prompts
+# No need to import track
+from rich.console import Console  # NEW IMPORT
+
 from libriscribe.agents.agent_base import Agent
-from libriscribe.utils.file_utils import extract_json_from_markdown, read_json_file, write_json_file
 from libriscribe.knowledge_base import ProjectKnowledgeBase
-#No need to import track
-from rich.console import Console #NEW IMPORT
+from libriscribe.utils.file_utils import extract_json_from_markdown
+from libriscribe.utils.llm_client import LLMClient
 
-console = Console() # Create a console instance.
+console = Console()  # Create a console instance.
 logger = logging.getLogger(__name__)
+
 
 class ConceptGeneratorAgent(Agent):
     """Generates book concepts."""
@@ -22,12 +21,14 @@ class ConceptGeneratorAgent(Agent):
     def __init__(self, llm_client: LLMClient):
         super().__init__("ConceptGeneratorAgent", llm_client)
 
-    def execute(self, project_knowledge_base: ProjectKnowledgeBase, output_path: Optional[str] = None) -> None:
+    def execute(
+        self, project_knowledge_base: ProjectKnowledgeBase, output_path: Optional[str] = None
+    ) -> None:
         """Generates a book concept, with critique and refinement."""
         try:
             # --- Step 1: Initial Concept Generation (Simplified) ---
             if project_knowledge_base.book_length == "Short Story":
-                initial_prompt = f"""Generate a concise book concept for a {project_knowledge_base.genre} {project_knowledge_base.category} short story.
+                initial_prompt = """Generate a concise book concept for a {project_knowledge_base.genre} {project_knowledge_base.category} short story.
                     The book should be written in {project_knowledge_base.language}.
 
                     Initial ideas: {project_knowledge_base.description}.
@@ -45,7 +46,7 @@ class ConceptGeneratorAgent(Agent):
                     }
                     ```"""
             else:
-                initial_prompt = f"""Generate a book concept for a {project_knowledge_base.genre} {project_knowledge_base.category} ({project_knowledge_base.book_length}).
+                initial_prompt = """Generate a book concept for a {project_knowledge_base.genre} {project_knowledge_base.category} ({project_knowledge_base.book_length}).
                 The book should be written in {project_knowledge_base.language}.
 
                 Initial ideas: {project_knowledge_base.description}.
@@ -63,7 +64,7 @@ class ConceptGeneratorAgent(Agent):
                 }}
                 ```"""
 
-            console.print(f"🧠 [cyan]Generating initial concept...[/cyan]")
+            console.print("🧠 [cyan]Generating initial concept...[/cyan]")
             initial_concept_md = self.llm_client.generate_content_with_json_repair(initial_prompt)
 
             if not initial_concept_md:
@@ -76,27 +77,26 @@ class ConceptGeneratorAgent(Agent):
                 return None
 
             # --- Step 2: Critique the Concept ---
-            critique_prompt = f"""Critique the following book concept:
+            critique_prompt = """Critique the following book concept:
 
             ```json
             {json.dumps(initial_concept_json)}
             ```
             The book should be written in {project_knowledge_base.language}.
-           
+
             Evaluate:
             - **Title:** Is it compelling and relevant?
             - **Logline:** Is it concise and does it capture the core conflict?
             - **Description:** Is it well-written, engaging, and does it provide a clear sense of the story?  Are there any obvious weaknesses or areas for improvement? Be specific and constructive.
             """
-            console.print(f"🔍 [cyan]Evaluating concept quality...[/cyan]")
+            console.print("🔍 [cyan]Evaluating concept quality...[/cyan]")
             critique = self.llm_client.generate_content(critique_prompt)
             if not critique:
                 logger.error("Critique generation failed.")
                 return None
 
-
             # --- Step 3: Refine the Concept ---
-            refine_prompt = f"""Refine the book concept based on the critique.  Address the weaknesses and improve the concept.
+            refine_prompt = """Refine the book concept based on the critique.  Address the weaknesses and improve the concept.
             The book should be written in {project_knowledge_base.language}.
 
             Original Concept:
@@ -116,7 +116,7 @@ class ConceptGeneratorAgent(Agent):
             }}
             ```
             """
-            console.print(f"✨ [cyan]Refining concept...[/cyan]")
+            console.print("✨ [cyan]Refining concept...[/cyan]")
             refined_concept_md = self.llm_client.generate_content_with_json_repair(refine_prompt)
             if not refined_concept_md:
                 logger.error("Refined concept generation failed.")
@@ -128,16 +128,20 @@ class ConceptGeneratorAgent(Agent):
                 return None
 
             # --- Step 4: Update ProjectData (using refined concept) ---
-            if 'title' in refined_concept_json:
-                project_knowledge_base.title = refined_concept_json['title']
-            if 'logline' in refined_concept_json:
-                project_knowledge_base.logline = refined_concept_json['logline']
-            if 'description' in refined_concept_json:
-                project_knowledge_base.description = refined_concept_json['description']
+            if "title" in refined_concept_json:
+                project_knowledge_base.title = refined_concept_json["title"]
+            if "logline" in refined_concept_json:
+                project_knowledge_base.logline = refined_concept_json["logline"]
+            if "description" in refined_concept_json:
+                project_knowledge_base.description = refined_concept_json["description"]
 
-            logger.info(f"Concept generated (refined): Title: {project_knowledge_base.title}, Logline: {project_knowledge_base.logline}")
+            logger.info(
+                f"Concept generated (refined): Title: {
+    project_knowledge_base.title}, Logline: {
+        project_knowledge_base.logline}"
+            )
 
         except Exception as e:
             self.logger.exception(f"Error generating concept: {e}")
-            print(f"ERROR: Failed to generate concept. See log for details.")
+            print("ERROR: Failed to generate concept. See log for details.")
             return None

@@ -2,19 +2,21 @@
 
 import json
 import logging
-from typing import Optional
 from pathlib import Path
+from typing import Optional
 
-from libriscribe.utils.llm_client import LLMClient
-from libriscribe.utils import prompts_context as prompts
-from libriscribe.agents.agent_base import Agent
-from libriscribe.utils.file_utils import write_json_file, extract_json_from_markdown
-
-from libriscribe.knowledge_base import ProjectKnowledgeBase, Character
 from rich.console import Console
+
+from libriscribe.agents.agent_base import Agent
+from libriscribe.knowledge_base import Character, ProjectKnowledgeBase
+from libriscribe.utils import prompts_context as prompts
+from libriscribe.utils.file_utils import extract_json_from_markdown, write_json_file
+from libriscribe.utils.llm_client import LLMClient
+
 console = Console()
 
 logger = logging.getLogger(__name__)
+
 
 class CharacterGeneratorAgent(Agent):
     """Generates character profiles."""
@@ -22,21 +24,25 @@ class CharacterGeneratorAgent(Agent):
     def __init__(self, llm_client: LLMClient):
         super().__init__("CharacterGeneratorAgent", llm_client)
 
-    def execute(self, project_knowledge_base: ProjectKnowledgeBase, output_path: Optional[str] = None) -> None:
+    def execute(
+        self, project_knowledge_base: ProjectKnowledgeBase, output_path: Optional[str] = None
+    ) -> None:
         try:
-            console.print(f"👥 [cyan]Creating character profiles...[/cyan]")
+            console.print("👥 [cyan]Creating character profiles...[/cyan]")
             prompt = prompts.CHARACTER_PROMPT.format(
                 title=project_knowledge_base.title,
                 genre=project_knowledge_base.genre,
                 category=project_knowledge_base.category,
                 language=project_knowledge_base.language,
                 description=project_knowledge_base.description,
-                num_characters=project_knowledge_base.num_characters
+                num_characters=project_knowledge_base.num_characters,
                 # ... other relevant fields
             )
 
             # Lower temperature for more structured output
-            character_json_str = self.llm_client.generate_content_with_json_repair(prompt, max_tokens=4000, temperature=0.5)
+            character_json_str = self.llm_client.generate_content_with_json_repair(
+                prompt, max_tokens=4000, temperature=0.5
+            )
 
             if not character_json_str:
                 print("ERROR: Character generation failed. See Log")
@@ -55,7 +61,9 @@ class CharacterGeneratorAgent(Agent):
                         char_data = {k.lower(): v for k, v in char_data.items()}
 
                         # --- FIX for relationships and Nested Data ---
-                        relationships = char_data.get("relationships", {}) or char_data.get("relationships with other characters", {})
+                        relationships = char_data.get("relationships", {}) or char_data.get(
+                            "relationships with other characters", {}
+                        )
                         if isinstance(relationships, str):
                             relationships = {"general": relationships}
                         elif isinstance(relationships, dict):
@@ -68,7 +76,7 @@ class CharacterGeneratorAgent(Agent):
                                     # Flatten if it's a nested dict (unlikely, but handle it)
                                     flat_rel_value = ""
                                     for sub_key, sub_value in rel_value.items():
-                                        if isinstance(sub_value,str):
+                                        if isinstance(sub_value, str):
                                             flat_rel_value += f"{sub_key}: {sub_value} "
                                         else:
                                             flat_rel_value += f"{sub_key}: {json.dumps(sub_value)} "
@@ -80,10 +88,12 @@ class CharacterGeneratorAgent(Agent):
                         # Flatten any other nested dictionaries (like we did for worldbuilding)
                         flattened_char_data = {}
                         for key, value in char_data.items():
-                            if isinstance(value, dict) and key != "relationships":  # Don't flatten relationships again
+                            if (
+                                isinstance(value, dict) and key != "relationships"
+                            ):  # Don't flatten relationships again
                                 flattened_value = ""
                                 for sub_key, sub_value in value.items():
-                                    if isinstance(sub_value,str):
+                                    if isinstance(sub_value, str):
                                         flattened_value += f"{sub_key}: {sub_value} "
                                     else:
                                         flattened_value += f"{sub_key} : {json.dumps(sub_value)} "
@@ -92,38 +102,52 @@ class CharacterGeneratorAgent(Agent):
                             elif isinstance(value, str):
                                 flattened_char_data[key] = value
                             elif isinstance(value, list):  # Handle lists (like personality_traits)
-                                flattened_char_data[key] = [item.strip() if isinstance(item, str) else item for item in value]
+                                flattened_char_data[key] = [
+                                    item.strip() if isinstance(item, str) else item
+                                    for item in value
+                                ]
                             else:
                                 flattened_char_data[key] = json.dumps(value)
 
                         # --- MODIFIED PERSONALITY TRAITS HANDLING ---
                         personality_traits = flattened_char_data.get("personality_traits", "")
-                        
+
                         # Convert to string format instead of array
                         if isinstance(personality_traits, list):
                             # Join list into a comma-separated string
-                            personality_traits = ", ".join([str(trait).strip() for trait in personality_traits if trait])
+                            personality_traits = ", ".join(
+                                [str(trait).strip() for trait in personality_traits if trait]
+                            )
                         elif isinstance(personality_traits, str):
                             # Keep it as a string, just ensure it's properly formatted
                             personality_traits = personality_traits.strip()
-                        
+
                         # Only use default if we have an empty string after processing
                         if not personality_traits:
-                            personality_traits = "Resourceful, Cautious, Determined"  # Default traits as string
-                        
+                            personality_traits = (
+                                "Resourceful, Cautious, Determined"  # Default traits as string
+                            )
+
                         # Create character using the flattened data
                         character = Character(
                             name=flattened_char_data.get("name", ""),
                             age=str(flattened_char_data.get("age", "")),
-                            physical_description=flattened_char_data.get("physical description", ""),
+                            physical_description=flattened_char_data.get(
+                                "physical description", ""
+                            ),
                             personality_traits=personality_traits,  # Now using string instead of list
-                            background=flattened_char_data.get("background", "") or flattened_char_data.get("background/backstory", ""),
+                            background=flattened_char_data.get("background", "")
+                            or flattened_char_data.get("background/backstory", ""),
                             motivations=flattened_char_data.get("motivations", ""),
                             relationships=relationships,
-                            role=flattened_char_data.get("role", "") or flattened_char_data.get("role in the story", ""),
-                            internal_conflicts=flattened_char_data.get("internal conflicts", "") or flattened_char_data.get("internal_conflicts", ""),
-                            external_conflicts=flattened_char_data.get("external conflicts", "") or flattened_char_data.get("external_conflicts", ""),
-                            character_arc=flattened_char_data.get("character arc", "") or flattened_char_data.get("character_arc", ""),
+                            role=flattened_char_data.get("role", "")
+                            or flattened_char_data.get("role in the story", ""),
+                            internal_conflicts=flattened_char_data.get("internal conflicts", "")
+                            or flattened_char_data.get("internal_conflicts", ""),
+                            external_conflicts=flattened_char_data.get("external conflicts", "")
+                            or flattened_char_data.get("external_conflicts", ""),
+                            character_arc=flattened_char_data.get("character arc", "")
+                            or flattened_char_data.get("character_arc", ""),
                         )
 
                         # --- Update/Add Character ---
@@ -140,7 +164,9 @@ class CharacterGeneratorAgent(Agent):
 
                         # Print all fields for verification
                         for key, value in character.model_dump().items():
-                            console.print(f"  - [cyan]{key.replace('_', ' ').title()}:[/cyan] {value}")
+                            console.print(
+                                f"  - [cyan]{key.replace('_', ' ').title()}:[/cyan] {value}"
+                            )
 
                     except Exception as e:
                         logger.warning(f"Skipping a character due to error: {str(e)}")
@@ -154,8 +180,8 @@ class CharacterGeneratorAgent(Agent):
             if output_path is None:
                 output_path = str(Path(project_knowledge_base.project_dir) / "characters.json")
             write_json_file(output_path, processed_characters)  # Save characters
-            console.print(f"[green]💾 Character profiles saved![/green]")
+            console.print("[green]💾 Character profiles saved![/green]")
 
         except Exception as e:
             self.logger.exception(f"Error generating character profiles: {e}")
-            print(f"ERROR: Failed to generate character profiles. See log.")
+            print("ERROR: Failed to generate character profiles. See log.")

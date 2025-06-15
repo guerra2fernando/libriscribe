@@ -1,10 +1,11 @@
 # src/libriscribe/agents/agent_base.py
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from ..utils.llm_client import LLMClient
 
 logger = logging.getLogger(__name__)
+
 
 class Agent:
     """Base class for all agents."""
