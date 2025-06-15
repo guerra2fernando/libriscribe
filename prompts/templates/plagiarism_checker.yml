@@ -1,0 +1,36 @@
+name: "Plagiarism Checker"
+description: "Checks content for originality and potential similarity issues"
+version: "1.0"
+category: "review"
+cost_tier: "low"
+
+template: |
+  Check this {genre} content for potential originality concerns and similarity to well-known works.
+  
+  Content to analyze:
+  {content_to_analyze}
+  
+  Evaluate for:
+  - Similarity to famous {genre} works or popular stories
+  - Overused tropes or clichéd elements
+  - Distinctive phrases that might echo other works
+  - Plot elements that closely mirror existing stories
+  - Character archetypes that are too derivative
+  - Unique elements that enhance originality
+  
+  Provide a summary of originality assessment and suggestions for enhancing uniqueness.
+  Flag any specific concerns that require attention.
+  Language: {language}
+
+variables:
+  required:
+    - genre
+    - content_to_analyze
+    - language
+
+settings:
+  max_tokens: 800
+  temperature: 0.3
+  suggested_models:
+    - "gpt-4o"
+    - "claude-3.5-sonnet"

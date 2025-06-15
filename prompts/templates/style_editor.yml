@@ -1,0 +1,36 @@
+name: "Style Editor"
+description: "Refines writing style and enhances prose quality"
+version: "1.0"
+category: "editing"
+cost_tier: "medium"
+
+template: |
+  Refine the writing style of this {genre} chapter for enhanced readability and impact.
+  
+  Chapter content:
+  {chapter_content}
+  
+  Focus on improving:
+  - Sentence variety and rhythm
+  - Word choice and vocabulary precision
+  - Tone consistency with genre expectations
+  - Clarity and conciseness
+  - Descriptive language and imagery
+  - Flow between paragraphs and sections
+  
+  Maintain the author's voice while enhancing style quality.
+  Preserve all plot points and character development.
+  Language: {language}
+
+variables:
+  required:
+    - genre
+    - chapter_content
+    - language
+
+settings:
+  max_tokens: 3000
+  temperature: 0.3
+  suggested_models:
+    - "claude-3.5-sonnet"
+    - "gpt-4o"
