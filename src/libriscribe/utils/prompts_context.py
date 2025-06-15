@@ -3,6 +3,7 @@
 from typing import Any, Dict, Optional, List, Union, Tuple
 from libriscribe.knowledge_base import ProjectKnowledgeBase
 
+
 def get_worldbuilding_aspects(category: str) -> str:
     """Dynamically returns worldbuilding aspects based on the project category."""
     category = category.lower()
@@ -61,8 +62,9 @@ Appendices: (Supplementary materials, raw data, questionnaires)
     else:
         return ""  # Return empty string for unknown categories
 
-WORLDBUILDING_ASPECTS = { #Keep like this, so we can access it in outliner
-"fiction": """
+
+WORLDBUILDING_ASPECTS = {  # Keep like this, so we can access it in outliner
+    "fiction": """
 
 Geography: (Detailed descriptions of the land, climate, significant locations)
 
@@ -90,7 +92,7 @@ Economy: (Trade, currency, resources, economic systems)
 
 Conflicts: (Past and present wars, rivalries, political tensions)
 """,
-"non-fiction": """
+    "non-fiction": """
 
 Setting/Context: (The time period, location, and relevant background)
 
@@ -108,7 +110,7 @@ Different Perspectives: (Varying viewpoints on the topic)
 
 Key Concepts/Ideas: (Central themes and principles)
 """,
-"business": """
+    "business": """
 
 Industry Overview: (Current state of the industry, trends, major players)
 
@@ -132,7 +134,7 @@ Risks and Challenges: (Potential obstacles and mitigation strategies)
 
 Opportunities for Growth: (Expansion plans, new markets, product development)
 """,
-"research paper": """
+    "research paper": """
 
 Introduction: (Background information, research question, hypothesis)
 
@@ -149,7 +151,7 @@ Conclusion: (Summary of key findings, future research directions)
 References: (List of sources cited)
 
 Appendices: (Supplementary materials, raw data, questionnaires)
-"""
+""",
 }
 
 # --- Prompts ---
@@ -291,55 +293,22 @@ IMPORTANT: The content should be written entirely in {language}.
 
 
 EDITOR_PROMPT = """
-You are an expert editor tasked with refining and improving a chapter of a {genre} book titled "{book_title}".
-The book is written in {language}.
+Expert editor: refine this {genre} chapter from "{book_title}" (written in {language}).
 
 Chapter {chapter_number}: {chapter_title}
-
-Here is the chapter content:
 {chapter_content}
 
-A content reviewer has provided the following feedback. MAKE SURE to address ALL issues they raised:
+Reviewer feedback to address:
 {review_feedback}
 
-Instructions:
+Fix all reviewer issues plus:
+- Structure, pacing, clarity, plot advancement
+- Plot holes, inconsistencies, transitions, dialogue
+- Style consistency, passive voice, weak verbs, imagery
+- Character consistency with established personalities
+- Grammar, spelling, punctuation, typos
 
-Fix ALL issues mentioned in the reviewer's feedback
-
-Content and Structure:
-
-Evaluate the chapter's overall structure, pacing, and clarity.
-
-Ensure the chapter advances the plot and contributes to the overall story arc.
-
-Identify any plot holes, inconsistencies, or confusing elements.
-
-Suggest improvements to scene transitions, character interactions, and dialogue.
-
-Style and Tone:
-
-Assess the writing style and tone for consistency with the genre.
-
-Identify any instances of passive voice, repetitive sentence structures, or weak verbs.
-
-Enhance the descriptive language to create vivid imagery.
-
-Character Development:
-
-Ensure their actions, dialogue, and thoughts are consistent with their established personalities.
-
-Grammar and Mechanics:
-
-Correct any grammatical errors, spelling mistakes, punctuation issues, and typos.
-
-Output:
-
-Provide the complete, revised chapter with all improvements incorporated. Use Markdown formatting.
-Wrap the ENTIRE revised chapter in a Markdown code block, like this:
-
-[The full revised chapter content]
-
-IMPORTANT: The content should be written entirely in {language}.
+Output: Complete revised chapter in {language} using Markdown formatting.
 """
 
 
@@ -439,58 +408,88 @@ Important: Focus on showing rather than telling. Create an immersive experience 
 IMPORTANT: The content should be written entirely in {language}.
 """
 
+
 def clean_worldbuilding_for_category(project_knowledge_base: ProjectKnowledgeBase):
     """
     Clean the worldbuilding object to only keep fields relevant to the project category.
     This can be called before saving the project data to ensure a clean JSON output.
     """
-    if not project_knowledge_base.worldbuilding_needed or not project_knowledge_base.worldbuilding:
+    if (
+        not project_knowledge_base.worldbuilding_needed
+        or not project_knowledge_base.worldbuilding
+    ):
         project_knowledge_base.worldbuilding = None
         return
-        
+
     category = project_knowledge_base.category.lower()
     worldbuilding = project_knowledge_base.worldbuilding
-    
+
     # Get relevant fields for this category
     if category == "fiction":
         relevant_fields = [
-            "geography", "culture_and_society", "history", "rules_and_laws",
-            "technology_level", "magic_system", "key_locations",
-            "important_organizations", "flora_and_fauna", "languages",
-            "religions_and_beliefs", "economy", "conflicts"
+            "geography",
+            "culture_and_society",
+            "history",
+            "rules_and_laws",
+            "technology_level",
+            "magic_system",
+            "key_locations",
+            "important_organizations",
+            "flora_and_fauna",
+            "languages",
+            "religions_and_beliefs",
+            "economy",
+            "conflicts",
         ]
     elif category == "non-fiction":
         relevant_fields = [
-            "setting_context", "key_figures", "major_events", "underlying_causes",
-            "consequences", "relevant_data", "different_perspectives", 
-            "key_concepts"
+            "setting_context",
+            "key_figures",
+            "major_events",
+            "underlying_causes",
+            "consequences",
+            "relevant_data",
+            "different_perspectives",
+            "key_concepts",
         ]
     elif category == "business":
         relevant_fields = [
-            "industry_overview", "target_audience", "market_analysis",
-            "business_model", "marketing_and_sales_strategy", "operations",
-            "financial_projections", "management_team",
-            "legal_and_regulatory_environment", "risks_and_challenges",
-            "opportunities_for_growth"
+            "industry_overview",
+            "target_audience",
+            "market_analysis",
+            "business_model",
+            "marketing_and_sales_strategy",
+            "operations",
+            "financial_projections",
+            "management_team",
+            "legal_and_regulatory_environment",
+            "risks_and_challenges",
+            "opportunities_for_growth",
         ]
     elif category == "research paper":
         relevant_fields = [
-            "introduction", "literature_review", "methodology", "results",
-            "discussion", "conclusion", "references", "appendices"
+            "introduction",
+            "literature_review",
+            "methodology",
+            "results",
+            "discussion",
+            "conclusion",
+            "references",
+            "appendices",
         ]
     else:
         # If category not recognized, keep all fields
         return
-    
+
     # Create clean Worldbuilding object with only relevant fields
     clean_worldbuilding = Worldbuilding()
-    
+
     # Copy only the relevant fields that have content
     for field in relevant_fields:
         if hasattr(worldbuilding, field):
             value = getattr(worldbuilding, field)
             if value and isinstance(value, str) and value.strip():
                 setattr(clean_worldbuilding, field, value)
-    
+
     # Replace with clean version
     project_knowledge_base.worldbuilding = clean_worldbuilding

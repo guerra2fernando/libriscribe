@@ -1,3 +1,4 @@
+from libriscribe.utils.cost_tracker import CostTracker
 # src/libriscribe/utils/llm_client.py
 import openai
 from openai import OpenAI  # For OpenAI
@@ -27,6 +28,7 @@ class LLMClient:
         self.llm_provider = llm_provider
         self.client = self._get_client()  # Initialize the correct client
         self.model = self._get_default_model()
+        self.cost_tracker = CostTracker()
 
     def _get_client(self):
         """Initializes the appropriate client based on the provider."""
@@ -89,7 +91,13 @@ class LLMClient:
                     max_tokens=max_tokens,
                     temperature=temperature,
                 )
-                return response.choices[0].message.content.strip()
+                content = response.choices[0].message.content.strip()
+                # Track usage
+                input_tokens = len(prompt.split()) * 1.3
+                output_tokens = len(content.split()) * 1.3 if content else 0
+                cost = self.cost_tracker.calculate_cost(f"{self.llm_provider}/{self.model}", int(input_tokens), int(output_tokens))
+                self.cost_tracker.log_usage(self.llm_provider, self.model, "generate_content", int(input_tokens), int(output_tokens), cost)
+                return content
 
             elif self.llm_provider == "claude":
                 response = self.client.messages.create(
@@ -98,12 +106,24 @@ class LLMClient:
                     temperature=temperature,
                     messages=[{"role": "user", "content": prompt}]
                 )
-                return response.content[0].text.strip()
+                text_content = response.content[0].text.strip()
+                # Track usage
+                input_tokens = len(prompt.split()) * 1.3
+                output_tokens = len(text_content.split()) * 1.3 if text_content else 0
+                cost = self.cost_tracker.calculate_cost(f"{self.llm_provider}/{self.model}", int(input_tokens), int(output_tokens))
+                self.cost_tracker.log_usage(self.llm_provider, self.model, "generate_content", int(input_tokens), int(output_tokens), cost)
+                return text_content
 
             elif self.llm_provider == "google_ai_studio":
                 model = self.client.GenerativeModel(model_name=self.model)
                 response = model.generate_content(prompt) # No need for messages list with genai
-                return response.text.strip()
+                text_response = response.text.strip()
+                # Track usage
+                input_tokens = len(prompt.split()) * 1.3
+                output_tokens = len(text_response.split()) * 1.3 if text_response else 0
+                cost = self.cost_tracker.calculate_cost(f"{self.llm_provider}/{self.model}", int(input_tokens), int(output_tokens))
+                self.cost_tracker.log_usage(self.llm_provider, self.model, "generate_content", int(input_tokens), int(output_tokens), cost)
+                return text_response
 
             elif self.llm_provider == "deepseek":
                 headers = {
@@ -118,7 +138,13 @@ class LLMClient:
                 }
                 response = requests.post("https://api.deepseek.com/v1/chat/completions", headers=headers, json=data, timeout=120) # Timeout
                 response.raise_for_status() # Raise for HTTP errors
-                return response.json()["choices"][0]["message"]["content"].strip()
+                # Track usage
+                deepseek_response = response.json()["choices"][0]["message"]["content"].strip()
+                input_tokens = len(prompt.split()) * 1.3
+                output_tokens = len(deepseek_response.split()) * 1.3 if deepseek_response else 0
+                cost = self.cost_tracker.calculate_cost(f"{self.llm_provider}/{self.model}", int(input_tokens), int(output_tokens))
+                self.cost_tracker.log_usage(self.llm_provider, self.model, "generate_content", int(input_tokens), int(output_tokens), cost)
+                return deepseek_response
             elif self.llm_provider == "mistral":
                 headers = {
                     "Content-Type": "application/json",
@@ -133,7 +159,6 @@ class LLMClient:
 
                 response = requests.post("https://api.mistral.ai/v1/chat/completions", headers=headers, json=data, timeout=120)
                 response.raise_for_status()
-                return response.json()['choices'][0]['message']['content'].strip()
 
             else:
                 return "" #  Should not happen, provider checked in init
