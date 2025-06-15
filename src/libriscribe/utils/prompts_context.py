@@ -1,6 +1,5 @@
 # src/libriscribe/utils/prompts_context.py
 
-from typing import Any, Dict, Optional, List, Union, Tuple
 from libriscribe.knowledge_base import ProjectKnowledgeBase
 
 def get_worldbuilding_aspects(category: str) -> str:
