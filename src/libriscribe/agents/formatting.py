@@ -1,14 +1,11 @@
 # src/libriscribe/agents/formatting.py
-import asyncio
-import json
 import logging
-from typing import Any, Dict, List, Optional
 from pathlib import Path
 
 from libriscribe.utils.llm_client import LLMClient
 from libriscribe.utils import prompts_context as prompts
 from libriscribe.agents.agent_base import Agent
-from libriscribe.utils.file_utils import get_chapter_files, read_markdown_file, read_json_file, write_markdown_file
+from libriscribe.utils.file_utils import get_chapter_files, read_markdown_file, write_markdown_file
 # For PDF creation
 from fpdf import FPDF
 
