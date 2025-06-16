@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import Any, Optional
+from typing import Optional
 from pathlib import Path
 
 from libriscribe.utils.llm_client import LLMClient
