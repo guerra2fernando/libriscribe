@@ -1,5 +1,4 @@
 # src/libriscribe/utils/llm_client.py
-import openai
 from openai import OpenAI  # For OpenAI
 import logging
 from tenacity import retry, stop_after_attempt, wait_random_exponential

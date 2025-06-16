@@ -2,10 +2,8 @@
 import typer
 from libriscribe.agents.project_manager import ProjectManagerAgent
 from typing import List, Dict, Any
-from libriscribe.utils.llm_client import LLMClient
 import json
 from rich.console import Console
-from rich.prompt import Prompt
 from rich.panel import Panel
 import logging
 import warnings
@@ -13,7 +11,6 @@ from pydantic import PydanticDeprecationWarning
 
 from libriscribe.knowledge_base import ProjectKnowledgeBase, Chapter  # Import the new class
 from libriscribe.settings import Settings
-from rich.progress import track  # Import track
 warnings.filterwarnings("ignore", category=PydanticDeprecationWarning)
 
 # Configure logging (same as before)

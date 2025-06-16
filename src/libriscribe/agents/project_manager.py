@@ -1,7 +1,7 @@
 # src/libriscribe/agents/project_manager.py
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Optional
 from pathlib import Path
 
 from libriscribe.agents.concept_generator import ConceptGeneratorAgent
@@ -18,7 +18,7 @@ from libriscribe.agents.plagiarism_checker import PlagiarismCheckerAgent
 from libriscribe.agents.fact_checker import FactCheckerAgent
 
 from libriscribe.settings import Settings
-from libriscribe.utils.file_utils import write_json_file, read_json_file, write_markdown_file, get_chapter_files, read_markdown_file
+from libriscribe.utils.file_utils import write_markdown_file, read_markdown_file
 from libriscribe.utils import prompts_context as prompts
 from libriscribe.knowledge_base import ProjectKnowledgeBase, Worldbuilding
 from libriscribe.utils.llm_client import LLMClient
