@@ -1,0 +1,36 @@
+name: "Fact Checker"
+description: "Verifies factual accuracy and consistency in content"
+version: "1.0"
+category: "review"
+cost_tier: "low"
+
+template: |
+  Fact-check the following content from a {genre} book for accuracy and consistency.
+  
+  Content to verify:
+  {content_to_check}
+  
+  Check for:
+  - Historical accuracy (dates, events, people)
+  - Technical correctness (science, technology, procedures)
+  - Geographic accuracy (locations, distances, climate)
+  - Cultural authenticity (customs, languages, traditions)
+  - Internal story consistency (previously established facts)
+  - Logical plausibility within the story world
+  
+  Report any inaccuracies found and suggest corrections.
+  Note any areas requiring additional research.
+  Language: {language}
+
+variables:
+  required:
+    - genre
+    - content_to_check
+    - language
+
+settings:
+  max_tokens: 1000
+  temperature: 0.2
+  suggested_models:
+    - "gpt-4o"
+    - "claude-3.5-sonnet"

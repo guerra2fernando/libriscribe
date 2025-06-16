@@ -1,0 +1,37 @@
+name: "Scene Outliner"
+description: "Creates detailed scene outlines within chapters"
+version: "1.0"
+category: "planning"
+cost_tier: "medium"
+
+template: |
+  Create detailed scene outlines for Chapter {chapter_number} of this {genre} story.
+  
+  Chapter context: {chapter_context}
+  Chapter summary: {chapter_summary}
+  
+  For each scene, provide:
+  - Scene purpose and goals
+  - Key events and conflicts
+  - Character interactions
+  - Emotional beats and tension
+  - Setting and atmosphere
+  - Transition to next scene
+  
+  Generate 3-5 scenes that create a compelling chapter flow.
+  Language: {language}
+
+variables:
+  required:
+    - chapter_number
+    - genre
+    - chapter_context
+    - chapter_summary
+    - language
+
+settings:
+  max_tokens: 2000
+  temperature: 0.6
+  suggested_models:
+    - "gpt-4o-mini"
+    - "claude-3.5-sonnet"
