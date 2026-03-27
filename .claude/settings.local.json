@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(npm test:*)",
+      "Bash(npm pack:*)",
+      "Bash(npm audit:*)",
+      "Bash(npm ci:*)",
+      "Bash(npm install:*)",
+      "Bash(npm publish:*)",
+      "Bash(npm login:*)",
+      "Bash(node:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git checkout:*)",
+      "Bash(git branch:*)",
+      "Bash(git merge:*)",
+      "Bash(git push:*)",
+      "Bash(git pull:*)",
+      "Bash(ls:*)",
+      "Bash(rm:*)",
+      "Bash(mkdir:*)",
+      "Bash(cp:*)",
+      "Bash(mv:*)",
+      "Bash(cat:*)",
+      "Bash(find C:/Users/Max/Desktop/Webapps/libriscribe-clone/docs -type f -name *.md)",
+      "Bash(grep -E \"\\\\.ts$\")",
+      "Bash(grep -r .specs C:/Users/Max/Desktop/Webapps/libriscribe-clone --include=*.md --include=*.ts)",
+      "Bash(grep -r .spec-driven C:/Users/Max/Desktop/Webapps/libriscribe-clone/assets --include=*.md)",
+      "Bash(grep -r .spec-driven C:/Users/Max/Desktop/Webapps/libriscribe-clone/src --include=*.ts)"
+    ]
+  }
+}

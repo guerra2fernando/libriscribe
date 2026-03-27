@@ -1,0 +1,21 @@
+{
+  "branchName": "improve-framework-amazon",
+  "sanitizedBranchName": "improve-framework-amazon",
+  "branchMemoryFolder": ".spec-driven/improve-framework-amazon",
+  "currentStage": "6-finalizer",
+  "completedSteps": [
+    "1-initializer",
+    "2-planner",
+    "3-designer",
+    "4-implementer",
+    "5-code-reviewer"
+  ],
+  "incompletedStages": [
+    "6-finalizer"
+  ],
+  "nextRecommendedStep": "6-finalizer",
+  "lastUpdatedBy": "Codex",
+  "lastUpdatedAt": "2026-03-27",
+  "initialized": true,
+  "finalized": false
+}

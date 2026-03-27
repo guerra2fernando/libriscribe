@@ -1,0 +1,13 @@
+---
+chapter: {{CHAPTER_NUMBER}}
+title: "Chapter {{CHAPTER_NUMBER}}: {{CHAPTER_TITLE}}"
+status: draft
+word_count_target: {{WORD_COUNT_TARGET}}
+word_count_actual: 0
+assigned_agent: chapter-writer
+reviewer_notes: ""
+---
+
+# {{CHAPTER_TITLE}}
+
+<!-- Chapter prose begins here -->

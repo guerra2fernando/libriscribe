@@ -1,0 +1,17 @@
+﻿{
+  "bookIdeaName": "{{BOOK_IDEA_NAME}}",
+  "sanitizedBookIdeaName": "{{BOOK_IDEA_SLUG}}",
+  "bookIdeaMemoryFolder": ".spec/{{BOOK_IDEA_SLUG}}",
+  "bookContentDir": "{{BOOK_IDEA_SLUG}}",
+  "currentStage": "1-book-init",
+  "completedSteps": [],
+  "incompletedStages": [],
+  "nextRecommendedStep": "1-book-init - capture book concept, audience, and success criteria",
+  "lastUpdatedBy": "book-producer",
+  "lastUpdatedAt": "{{DATE}}",
+  "initialized": true,
+  "finalized": false,
+  "orchestrationMode": "sequential",
+  "chapterCount": 0,
+  "manuscriptFile": null
+}

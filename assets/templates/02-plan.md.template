@@ -1,0 +1,43 @@
+# 02-plan — {{BOOK_IDEA_NAME}}
+
+## Execution Plan Summary
+
+<!-- What will be done in each stage and why -->
+
+## Chapter List
+
+| # | Title | Description | Word Count Target | Parallel Safe |
+|---|---|---|---|---|
+| 1 | | | | |
+
+## Milestones
+
+<!-- Key checkpoints requiring user approval before proceeding -->
+
+## Stage 3 Design Inputs
+
+<!-- What stage 3 must fully design: full plot, per-chapter summaries, diagrams -->
+
+## Dependency Map
+
+<!-- Which chapters depend on prior chapters being written/approved first -->
+
+## Parallel vs Sequential Annotations
+
+<!-- Which chapters can be drafted concurrently under parallel mode -->
+
+## Risks
+
+<!-- Content risks, scope risks, quality risks -->
+
+## Open Questions
+
+<!-- Decisions to settle before implementation -->
+
+## Status
+
+- [ ] Chapter list complete
+- [ ] Dependencies mapped
+- [ ] Parallel flag assigned per chapter
+- [ ] Stage 3 design requirements captured
+- [ ] Approved by user → ready for stage 3

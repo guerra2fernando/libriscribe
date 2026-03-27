@@ -1,0 +1,27 @@
+# 04-implementation — {{BOOK_IDEA_NAME}}
+
+## Implementation Setup
+
+- [ ] `book/` created
+- [ ] `book/chapters/` created
+- [ ] One file created per designed chapter
+
+## Chapter Writing Log
+
+| Chapter | File | Design Summary | Implemented Summary | Word Count | Status | Notes |
+|---|---|---|---|---|---|---|
+| | | | | | | |
+
+## Beat Sheets
+
+<!-- chapter-arc-architect output per chapter, appended below -->
+
+## Cleanup Log
+
+<!-- Paths deleted after all agent content extracted (implementation cleanup) -->
+
+## Status
+
+- Current chapter: —
+- Chapter files created: 0 / 0
+- Approved: 0

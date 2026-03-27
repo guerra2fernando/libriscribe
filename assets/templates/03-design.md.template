@@ -1,0 +1,85 @@
+# 03-design — {{BOOK_IDEA_NAME}}
+
+## Final Plot Summary
+
+<!-- End-to-end narrative/argument summary covering beginning, escalation, climax, resolution -->
+
+## Chapter Design Table
+
+| # | Title | Chapter Goal | Summary | Depends On | Target Words |
+|---|---|---|---|---|---|
+| 1 | | | | | |
+
+## Story Flow Diagrams (Mermaid)
+
+### 1) Overall Story Flow
+
+```mermaid
+flowchart LR
+	A[Opening] --> B[Rising Action]
+	B --> C[Midpoint Shift]
+	C --> D[Climax]
+	D --> E[Resolution]
+```
+
+### 2) Character / Argument Arc Progression
+
+```mermaid
+flowchart TB
+	C1[Chapter 1] --> C2[Chapter 2]
+	C2 --> C3[Chapter 3]
+	C3 --> C4[Chapter 4]
+```
+
+### 3) Chapter Dependency Graph
+
+```mermaid
+flowchart LR
+	CH1[Ch1] --> CH3[Ch3]
+	CH2[Ch2] --> CH3
+	CH3 --> CH4[Ch4]
+```
+
+## Agent Assignment
+
+<!-- Which agents are active for this book and their specific roles -->
+
+## Chapter Schema
+
+<!-- Frontmatter fields and required values for each chapter file -->
+
+## Context Memory Policy
+
+- Sliding window size: 4 chapters (last 4 before current)
+- Summary depth: 2–4 sentences per chapter
+- Open thread handling: flag in chapter-memory.json; must be addressed or explicitly deferred
+
+## Handoff Artifacts
+
+<!-- What each agent produces and what the next agent consumes -->
+
+## Stage 4 Implementation Contract
+
+- Create `.spec/{{BOOK_IDEA_SLUG}}/book/`
+- Create `.spec/{{BOOK_IDEA_SLUG}}/book/chapters/`
+- Create one chapter file per row in the Chapter Design Table
+- Filename convention: `NN-<slug>.md`
+- Stage 4 implementation summary must track design-to-implementation alignment
+
+## Orchestration Decision
+
+<!-- Parallel or sequential, with rationale -->
+
+## Out of Scope
+
+<!-- Design decisions deferred to later stages or v2 -->
+
+## Status
+
+- [ ] Final plot summary complete
+- [ ] Chapter design table complete
+- [ ] Mermaid diagrams complete
+- [ ] Agent assignment confirmed
+- [ ] Chapter schema confirmed
+- [ ] Orchestration decision confirmed
+- [ ] Approved by user → ready for stage 4

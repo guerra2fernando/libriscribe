@@ -1,200 +1,416 @@
-# LibriScribe 📚✨
+# book-producer
 
-<div align="center">
+This repository is the documentation, source, build, test, and publish workspace for the `book-producer` package.
 
-<img src="https://guerra2fernando.github.io/libriscribe/img/logo.png" alt="LibriScribe Logo" width="30%">
+The runtime framework README that gets installed into target repositories is:
 
-Your AI-Powered Book Writing Assistant
+- [`.book-framework/README.md`](./assets/README.md)
 
+`book-producer` is a stage-based book creation framework for AI-assisted writing. It gives AI assistants a structured way to handle book projects — from concept to published manuscript — with persistent book-aware context instead of relying only on chat history.
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Documentation](https://img.shields.io/badge/docs-visit%20now-green.svg)](https://guerra2fernando.github.io/libriscribe/)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
-[![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/downloads/)
-[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support-yellow.svg?style=flat&logo=buy-me-a-coffee)](https://buymeacoffee.com/guerra2fernando)
+The framework combines detailed staged instructions, reusable templates, and specialist agents that are invoked based on the task at hand. It is designed to work with Claude, GitHub Copilot, Cursor, Antigravity, and similar AI coding and writing environments.
 
-</div>
+## What it does
 
-## 🌟 Overview
+`book-producer` supports a two-step install model:
 
-LibriScribe harnesses the power of AI to revolutionize your book writing journey. Using a sophisticated multi-agent system, where each agent specializes in specific tasks, LibriScribe assists you from initial concept to final manuscript.
+1. A user installs the package globally on their machine from npm or from a GitHub Packages mirror.
+2. The user runs `book-producer install` inside any repository where they want to write a book.
 
-![Libriscribe Demo](https://github.com/guerra2fernando/libriscribe/blob/main/docs/static/img/libriscribe.gif?raw=true)
+Inside that target repository:
 
-## ✨ Features
+- `.book-framework/` stores the installed framework package assets
+- `.spec/<book-slug>/` stores book workflow memory and stage specs
+- `<book-slug>/` at repo root stores chapter drafts and the final manuscript
 
-### Creative Assistance 🎨
-- **Concept Generation:** Transform your ideas into detailed book concepts
-- **Automated Outlining:** Create comprehensive chapter-by-chapter outlines
-- **Character Generation:** Develop rich, multidimensional character profiles
-- **Worldbuilding:** Craft detailed universes with rich history, culture, and geography
+Once installed and initialized, the framework helps an AI assistant understand:
 
-### Writing & Editing 📝
-- **Chapter Writing:** Generate chapter drafts based on your outline
-- **Content Review:** Catch inconsistencies and plot holes
-- **Style Editing:** Polish your writing style for your target audience
-- **Fact-Checking:** Verify factual claims (for non-fiction)
+- the current book idea and its slug
+- the current workflow stage
+- what has already been decided and written
+- what file should be updated next
+- how to continue work consistently across supported tools and chat sessions
 
-### Quality Assurance 🔍
-- **Plagiarism Detection:** Ensure content originality
-- **Research Assistant:** Access comprehensive topic research
-- **Manuscript Formatting:** Export to polished Markdown or PDF
+## Why it exists
 
-## 🚀 Quickstart
+Most AI writing workflows lose context between chats, tools, and sessions. `book-producer` exists to give AI assistants a predictable, durable workflow model inside the repository itself.
 
-### 1. Installation
+Instead of depending only on temporary chat history, the framework stores book progress and stage outputs in markdown files that travel with the repository. This makes it easier to:
 
-```bash
-git clone https://github.com/guerra2fernando/libriscribe.git
-cd libriscribe
-pip install -e .
-```
+- resume writing later without re-explaining context
+- switch between supported AI tools
+- keep planning and implementation grounded in written state
+- reduce repeated prompting
+- keep multi-stage book work organized from concept through manuscript assembly
 
-### 2. Configuration
+## The package
 
-*   **LLM API Key:** Get an API key from one of the following services:
+The package installs a global CLI named:
 
-    - **OpenAI:** [Get API Key](https://platform.openai.com/signup/)
-    - **Anthropic:** [Get API Key](https://console.anthropic.com/)
-    - **DeepSeek:** [Get API Key](https://platform.deepseek.com/)
-    - **Google AI Studio (Gemini):** [Get API Key](https://aistudio.google.com/)
-    - **Mistral AI:** [Get API Key](https://console.mistral.ai/)
+- `book-producer`
 
-Create a `.env` file in the root directory and fill the api key of the LLM that you want to use:
-```bash
-OPENAI_API_KEY=your_api_key_here
-GOOGLE_AI_STUDIO_API_KEY=your_api_key_here
-CLAUDE_API_KEY=your_api_key_here
-DEEPSEEK_API_KEY=your_api_key_here
-MISTRAL_API_KEY=your_api_key_here
-```
+The built package ships:
 
+- compiled CLI output (`dist/`)
+- framework assets (`assets/`)
+- `README.md`
+- `CHANGELOG.md`
+- `VERSIONS.md`
+- `TROUBLESHOOTING.md`
+- `UPGRADING.md`
+- `LICENSE`
 
-### 3. Launch LibriScribe
+## How to install it
+
+Install the public npm package with:
 
 ```bash
-libriscribe start
+npm install -g book-producer
 ```
 
-Choose between:
-- 🎯 **Simple Mode:** Quick, streamlined book creation
-- 🎛️ **Advanced Mode:** Fine-grained control over each step
+Then, inside a target repository:
 
-## 💻 Advanced Usage
-
-### Project Creation
 ```bash
-python src/libriscribe/main.py start \
-    --project-name my_book \
-    --title "My Awesome Book" \
-    --genre fantasy \
-    --description "A tale of epic proportions." \
-    --category fiction \
-    --num-characters 3 \
-    --worldbuilding-needed True
+book-producer install
 ```
 
-### Core Commands
+For resetting the framework back to the defaults and overwriting everything under `.book-framework/`:
+
 ```bash
-# Generate book concept
-python src/libriscribe/main.py concept
-
-# Create outline
-python src/libriscribe/main.py outline
-
-# Generate characters
-python src/libriscribe/main.py characters
-
-# Build world
-python src/libriscribe/main.py worldbuilding
-
-# Write chapter
-python src/libriscribe/main.py write-chapter --chapter-number 1
-
-# Edit chapter
-python src/libriscribe/main.py edit-chapter --chapter-number 1
-
-# Format book
-python src/libriscribe/main.py format
+book-producer install --force
 ```
 
-## 📁 Project Structure
+## What files it creates
 
+Running `book-producer install` installs:
+
+- `.book-framework/README.md` — the runtime user guide installed into the repository
+- the framework docs and agent files under `.book-framework/`
+- editor and agent pointer files:
+  - `AGENTS.md`
+  - `CLAUDE.md`
+  - `.github/copilot-instructions.md`
+  - `.cursor/rules/book-producer.mdc`
+  - `.agents/workflows/book-producer.md`
+
+It also installs the framework agents, including:
+
+- numbered framework agents:
+  - `1-book-init`
+  - `2-book-planner`
+  - `3-book-designer`
+  - `4-chapter-writer`
+  - `5-book-reviewer`
+  - `6-publish-assembler`
+- standalone specialist agents:
+  - `concept-architect`
+  - `book-outliner`
+  - `book-blurb-writer`
+  - `line-editor`
+  - `developmental-editor`
+  - `character-world-designer`
+  - `chapter-arc-architect`
+  - `continuity-checker`
+  - `research-fact-integrity`
+  - `sensitivity-reader`
+  - `book-project-manager`
+
+Running `book-producer init "Book Title"` creates:
+
+- `.spec/<book-slug>/state.json`
+- `.spec/<book-slug>/00-current-status.md`
+- `.spec/<book-slug>/01-init.md`
+- `.spec/<book-slug>/assets/chapter-memory.json`
+- `.spec/.branch-mapping.json`
+- `<book-slug>/chapters/` at repo root
+
+## Book workflow layout
+
+After `book-producer install` and `book-producer init "My Book"`:
+
+```text
+.book-framework/
+.spec/
+  .branch-mapping.json
+  my-book/
+    state.json
+    00-current-status.md
+    01-init.md
+    assets/
+      chapter-memory.json
+my-book/
+  chapters/
 ```
-your_project/
-├── project_data.json    # Project metadata
-├── outline.md          # Book outline
-├── characters.json     # Character profiles
-├── world.json         # Worldbuilding details
-├── chapter_1.md       # Generated chapters
-├── chapter_2.md
-└── research_results.md # Research findings
+
+Important:
+
+- `.book-framework/` is the installed framework package inside the user's repository.
+- `.spec/<book-slug>/` is where the book specs and workflow memory live.
+- `<book-slug>/` at repo root is the actual book output (chapters and final manuscript).
+
+## Stage model
+
+Six numbered stages drive the workflow:
+
+| Stage | Agent | Stage file | What happens |
+|-------|-------|------------|--------------|
+| 1 | `1-book-init` | `01-init.md` | Capture concept, audience, genre, publishing intent, success criteria |
+| 2 | `2-book-planner` | `02-plan.md` | Build execution plan: chapter list, milestones, dependencies |
+| 3 | `3-book-designer` | `03-design.md` | Final content design: plot summary, chapter summaries, Mermaid diagrams |
+| 4 | `4-chapter-writer` | `04-implementation.md` | Create chapter files under `<book-slug>/chapters/` |
+| 5 | `5-book-reviewer` | `05-review.md` | Editorial, grammar, continuity, and quality review *(optional)* |
+| 6 | `6-publish-assembler` | `06-finalization.md` | Assemble approved chapters into the final manuscript |
+
+Stage files are created lazily:
+
+- Initialization creates `00-current-status.md`, `01-init.md`, and `state.json`.
+- Later numbered stage files are created only when that stage starts after explicit user approval.
+- Outside initialization, create at most two numbered stage files in one pass: a missing predecessor for recovery and the current stage file being started.
+
+The workflow is used in chat after installation. The stages are as follows:
+
+1. `1-book-init`: `AGENTS.md initialize this book idea`
+2. `2-book-planner`: `plan this book`
+3. `3-book-designer`: `design the chapters`
+4. `4-chapter-writer`: `write the chapters`
+5. `5-book-reviewer`: `review this book`
+6. `6-publish-assembler`: `finalize this`
+
+All of those steps are called in the AI chat and do not need to be referenced explicitly after initialization. Simple prompts such as `lets move to the next step`, `next step`, or `do the next step` should move the framework to the next numbered stage.
+
+If a request sounds like it is asking for multiple stages at once, book-producer should explain that it only runs one stage at a time, suggest the next recommended numbered stage first, and ask the user to confirm one single stage to run now.
+
+## What safety and destructive behavior exists
+
+The framework is designed to install into the target repository and update its own managed framework files.
+
+Important behavior to know:
+
+- `book-producer install` writes or updates framework-related files in the repository
+
+- `book-producer install --force` resets the installed framework files under `.book-framework/` back to the package defaults
+
+- `book-producer init --force` is intended to reset the current book spec files under `.spec/<book-slug>/` for that book only; it does not delete chapter files under `<book-slug>/chapters/`
+
+- the install command may update pointer files such as `AGENTS.md` and `.github/copilot-instructions.md` so supported tools are redirected to the installed framework
+
+- `6-publish-assembler` requires explicit user confirmation before any cleanup step; cleanup is irreversible
+
+As with any repository-writing tool, review changes before committing them, especially when using `--force`.
+
+## One simple example flow
+
+A typical workflow looks like this:
+
+1. Install the package globally:
+
+```bash
+npm install -g book-producer
 ```
 
-## ⚠️ Important Notes
+2. Install the framework inside your repository:
 
-- **API Costs:** Monitor your LLM API usage and spending limits
-- **Content Quality:** Generated content serves as a starting point, not final copy
-- **Review Process:** Always review and edit the AI-generated content
+```bash
+book-producer install
+```
 
+3. Create a new book idea:
 
-## 🔗 Quick Links
+```bash
+book-producer init "The Last Signal"
+```
 
-- [📚 Documentation](https://guerra2fernando.github.io/libriscribe/)
-- [🐛 Issue Tracker](https://github.com/guerra2fernando/libriscribe/issues)
-- [💡 Feature Requests](https://github.com/guerra2fernando/libriscribe/issues/new)
-- [📖 Wiki](https://github.com/guerra2fernando/libriscribe/wiki)
+4. In a new chat in your supported AI tool, initialize the book:
 
-## 🤝 Contributing
+```text
+AGENTS.md initialize this book idea. Only do the initialization step.
+```
 
-We welcome contributions! Check out our [Contributing Guidelines](CONTRIBUTING.md) to get started.
+5. Continue through the numbered workflow stages in chat:
 
-## 📄 License
+```text
+plan this book
+design the chapters
+write the chapters
+review this book
+finalize this
+```
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+6. At any point, ask for status:
 
----
+```text
+what's my status
+```
 
-## 🗺️ LibriScribe Development Roadmap
+## Tool compatibility
 
-### 🤖 LLM Integration & Support
-- [X] **Multi-LLM Support Implementation**: Anthropic Claude Models - Google Gemini Models - - Deepseek Models - Mistral Models
-- [ ] **Model Performance Benchmarking**
-- [ ] **Automatic Model Fallback System**
-- [ ] **Custom Model Fine-tuning Support**
-- [ ] **Cost Optimization Engine**
-- [ ] **Response Quality Monitoring**
+The framework is designed to work with:
 
-### 🔍 Vector Store & Search Enhancement
-- [ ] **Multi-Vector Database Support**: ChromaDB Integration, MongoDB Vector Search, Pinecone Integration, Weaviate Implementation
-- [ ] **Advanced Search Features**: Semantic Search, Hybrid Search (Keywords + Semantic), Cross-Reference Search, Contextual Query Understanding
-- [ ] **Embedding Models Integration**: Multiple Embedding Model Support, Custom Embedding Training, Embedding Optimization
+- Claude
+- GitHub Copilot
+- Cursor
+- Antigravity
 
-### 🔐 Authentication & Authorization
-- [ ] **Cerbos Implementation**: Role-Based Access Control (RBAC), Attribute-Based Access Control (ABAC), Custom Policy Definitions, Policy Testing Framework
-- [ ] **User Management System**: User Registration & Authentication, Social Auth Integration, Multi-Factor Authentication, Session Management
-- [ ] **Security Features**: Audit Logging, Rate Limiting, API Key Management, Security Headers Implementation
+Tool behavior is intentionally different:
 
-### 🌐 API Development
-- [ ] **Core API Features**: RESTful Endpoints, GraphQL Interface, WebSocket Support, API Documentation (OpenAPI/Swagger)
-- [ ] **API Management**: Version Control, Rate Limiting, Usage Monitoring, Error Handling
-- [ ] **Integration Features**: Webhook Support, Event System, Batch Processing, Export/Import Functionality
+- Claude may use parallel chapter or research packets created with `book-producer orchestrate ... --tool claude`.
+- Copilot, Cursor, Antigravity, and other tools must stay sequential.
 
-### 🎨 Frontend Application
-- [ ] **Dashboard Development**: Modern React Interface, Real-time Updates, Progressive Web App Support, Responsive Design
-- [ ] **Editor Features**: Rich Text Editor, Markdown Support, Real-time Collaboration, Version History
-- [ ] **Visualization Tools**: Character Relationship Graphs, Plot Timeline Visualization, World Map Generation, Story Arc Visualization
+Orchestration mode is auto-detected at `book-producer init` time: parallel if `ANTHROPIC_API_KEY`, `CLAUDE_*` env vars, or a `.claude/` directory is present; sequential otherwise. It can be overridden with `--mode parallel|sequential`.
 
+## CLI commands
 
+```bash
+book-producer install
+book-producer init "My Book"
+book-producer status [slug]
+book-producer list
+book-producer use <slug>
+book-producer doctor
+book-producer refresh
+book-producer orchestrate chapters [slug] --tool <tool> --chapters 1,2
+book-producer orchestrate research [slug] --tool <tool> --topics "topic one,topic two"
+```
 
-<div align="center">
+## Creating Your Own Package
 
-Made with ❤️ by Fernando Guerra and Lenxys
+If you want to generate and publish your own package variant of this framework, follow [PACKAGE-PUBLISHING.md](./PACKAGE-PUBLISHING.md).
 
-[⭐ Star us on GitHub](https://github.com/guerra2fernando/libriscribe)
+## Contents in this repository
 
-If LibriScribe has been helpful for your projects, consider buying me a coffee:
+### What This Repository Contains
 
-[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support-yellow.svg?style=flat&logo=buy-me-a-coffee)](https://buymeacoffee.com/guerra2fernando)
+- `src/`
+  - CLI entrypoint, commands, and library code
+- `assets/`
+  - framework markdown assets that are installed into target repositories
+- `tests/`
+  - unit, integration, and built-CLI smoke coverage
+- `scripts/`
+  - maintainer scripts, including registry publish artifact preparation
+- `docs/`
+  - API reference, architecture notes, FAQ, and tooling documentation
+- `VERSIONS.md`
+  - manual package version history and release notes
 
-</div>
+Two directories at the root of this source repository are used for managing its own development workflow and are **not** part of the published package:
+
+- `.united-we-stand/` — multi-agent coordination framework used for feature development, reviews, and releases of this repo
+- `.spec-driven/` — spec-driven workflow state for the currently active development branch
+
+These directories are excluded from the npm package `files` field and will never appear in a user's project.
+
+## Repository Layout
+
+```text
+repo-root/
+|-- assets/
+|-- bin/
+|-- docs/
+|-- scripts/
+|-- src/
+|   |-- cli.ts
+|   |-- commands/
+|   `-- lib/
+|-- tests/
+|-- CHANGELOG.md
+|-- LICENSE
+|-- package.json
+|-- README.md
+|-- VERSIONS.md
+`-- tsconfig.json
+```
+
+## Validation
+
+This repository is validated with:
+
+- `npm run build`
+- `npm test`
+- `npm run lint`
+- `npm audit --omit=dev`
+- `npm pack --dry-run`
+- fresh global install and target-repo smoke tests
+
+## Documentation
+
+- [PACKAGE-PUBLISHING.md](./PACKAGE-PUBLISHING.md)
+- [docs/API.md](./docs/API.md)
+- [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)
+- [docs/FAQ.md](./docs/FAQ.md)
+- [docs/TOOLING.md](./docs/TOOLING.md)
+
+# License
+
+This project is licensed under the **MIT License**.
+
+That means you may use it, copy it, modify it, merge it, publish it, distribute it, sublicense it, and/or sell copies of it, subject only to the conditions of the MIT License itself.
+
+Those MIT conditions are:
+
+1. The copyright notice must be included in copies or substantial portions of the software.
+2. The software is provided **as is**, without warranty of any kind.
+
+There are **no additional legal restrictions beyond MIT**.
+
+See the [LICENSE](./LICENSE) file for the full legal text.
+
+### Permissions
+
+| Permission | Allowed |
+|---|---|
+| Personal use | ✔ |
+| Commercial use | ✔ |
+| Modification | ✔ |
+| Distribution | ✔ |
+| Private use | ✔ |
+| Sublicensing | ✔ |
+| Warranty or liability from the maintainer | ✖ |
+
+**Commercial use is explicitly permitted.** You may use this package and its installed framework files in commercial products, client projects, internal enterprise tools, or any paid service without restriction and without requiring a separate commercial license.
+
+### Community Terms
+
+The following are **community requests and project norms**, not additional legal license conditions.
+
+#### Public Use and Participation
+
+This framework is public and free for anyone to use, evaluate, and deploy. You are actively invited to try it, give feedback, and adapt it to your own workflows.
+
+- **Forks are welcome.** Fork this repository freely for personal use, team use, or to build something new on top of it.
+- **Pull requests are welcome.** If you find a bug or want to improve the framework, open a PR. PRs that fix broken behavior are reviewed with priority.
+- **Bug fixes take priority over new features.** The stability and correctness of the framework model comes before expanding its scope. A broken workflow rule or incorrect CLI behavior will be addressed before a new agent or stage is added.
+- **Feature requests are accepted as issues.** If you have a feature idea, open an issue. There is no guarantee of implementation, but well-reasoned requests are considered.
+
+#### Derived Works and Attribution (requested, not required)
+
+If you publish a framework, package, tool, or product that is substantially based on or inspired by `book-producer`, attribution is appreciated.
+
+Suggested credit information:
+
+| Field | Suggested value |
+|---|---|
+| Author / maintainer username | `mrudinal` |
+| Package name and version | `book-producer@<version you based your work on>` |
+| Source repository URL | `https://github.com/mrudinal/book-producer` |
+
+Suggested credit format:
+
+```text
+Based on book-producer@<version> by mrudinal
+https://github.com/mrudinal/book-producer
+```
+
+# Versioning
+
+This project follows **Semantic Versioning** (`MAJOR.MINOR.PATCH`):
+
+- `PATCH` — backwards-compatible bug fixes
+- `MINOR` — backwards-compatible new features or agents
+- `MAJOR` — breaking changes to the CLI interface, framework file layout, or workflow model
+
+You can safely pin a minor version (e.g., `^0.1.0`) and expect patch updates to be non-breaking within that range.
+
+# No Warranty
+
+This software is provided as-is. The MIT License explicitly disclaims all warranties. Use it in production at your own discretion. Bugs will be addressed but there is no SLA or guaranteed response time.
