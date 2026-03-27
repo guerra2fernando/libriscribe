@@ -89,7 +89,7 @@ export function buildInitialState(
     currentStage: '1-book-init',
     completedSteps: [],
     incompletedStages: [],
-    nextRecommendedStep: '1-book-init - capture book idea, audience, and success criteria',
+    nextRecommendedStep: '1-book-init - capture book idea, audience, genre, publishing intent, and success criteria',
     lastUpdatedBy: 'book-producer',
     lastUpdatedAt: new Date().toISOString(),
     initialized: true,

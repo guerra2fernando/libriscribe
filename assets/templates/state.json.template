@@ -6,7 +6,7 @@
   "currentStage": "1-book-init",
   "completedSteps": [],
   "incompletedStages": [],
-  "nextRecommendedStep": "1-book-init - capture book concept, audience, and success criteria",
+  "nextRecommendedStep": "1-book-init - capture book idea, audience, genre, publishing intent, and success criteria",
   "lastUpdatedBy": "book-producer",
   "lastUpdatedAt": "{{DATE}}",
   "initialized": true,

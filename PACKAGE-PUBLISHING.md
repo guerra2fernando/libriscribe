@@ -93,6 +93,21 @@ Verify on npm after publishing:
 npm view book-producer
 ```
 
+### Quick reference — npm publish (all steps, copy-paste)
+
+```bash
+npm ci
+npm run build
+npm test
+npm run lint
+npm audit --omit=dev
+npm pack --dry-run
+npm run prepare:publish:npm
+npm pack ./.release/npm
+npm publish ./.release/npm --access public
+npm view book-producer
+```
+
 ---
 
 ## Publishing to GitHub Packages
@@ -136,6 +151,21 @@ npm publish ./.release/github --registry=https://npm.pkg.github.com
 Verify on GitHub after publishing:
 
 Go to your GitHub profile → Packages → `book-producer`
+
+### Quick reference — GitHub Packages publish (all steps, copy-paste)
+
+```bash
+npm ci
+npm run build
+npm test
+npm run lint
+npm audit --omit=dev
+npm pack --dry-run
+export BOOK_PRODUCER_GITHUB_SCOPE='@mrudinal'
+npm run prepare:publish:github
+npm pack ./.release/github
+npm publish ./.release/github --registry=https://npm.pkg.github.com
+```
 
 ---
 

@@ -25,8 +25,7 @@ npm pack ./.release/github
 - package runtime code under `src/`
 - installed framework assets under `assets/`
 - tool adapter docs under `assets/tooling/`
-- user-facing docs in `README.md`, `PUBLISHING.md`, and `docs/`
-- release workflows under `.github/workflows/`
+- user-facing docs in `README.md`, `PACKAGE-PUBLISHING.md`, and `docs/`
 
 ## Behavioral expectations
 
