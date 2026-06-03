@@ -1,4 +1,5 @@
 # src/libriscribe/main.py
+import sys
 import typer
 from libriscribe.agents.project_manager import ProjectManagerAgent
 from typing import List, Dict, Any
@@ -41,6 +42,8 @@ def select_llm(project_knowledge_base: ProjectKnowledgeBase):
     available_llms = []
     settings = Settings()
 
+    if settings.openrouter_api_key:
+        available_llms.append("openrouter")
     if settings.openai_api_key:
         available_llms.append("openai")
     if settings.claude_api_key:

@@ -1,0 +1,32 @@
+name: "Concept Generator"
+description: "Generates initial book concepts and themes"
+version: "1.0"
+category: "content_generation"
+cost_tier: "medium"
+
+template: |
+  Generate a compelling {genre} book concept.
+  
+  User preferences:
+  {user_input}
+  
+  Create a detailed concept including:
+  - Engaging title
+  - Compelling logline (1-2 sentences)
+  - Main themes
+  - Target audience
+  - Unique selling points
+  
+  Output in JSON format with title, logline, themes, audience, uniqueness fields.
+
+variables:
+  required:
+    - genre
+    - user_input
+
+settings:
+  max_tokens: 2000
+  temperature: 0.7
+  suggested_models:
+    - "gpt-4o-mini"
+    - "claude-3-5-sonnet"

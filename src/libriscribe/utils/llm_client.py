@@ -32,7 +32,12 @@ class LLMClient:
 
     def _get_client(self):
         """Initializes the appropriate client based on the provider."""
-        if self.llm_provider == "openai":
+        if self.llm_provider == "openrouter":
+            return OpenAI(
+                api_key=self.settings.openrouter_api_key,
+                base_url=self.settings.openrouter_base_url
+            )
+        elif self.llm_provider == "openai" or self.llm_provider == "openrouter":
             if not self.settings.openai_api_key:
                 raise ValueError("OpenAI API key is not set.")
             return OpenAI(api_key=self.settings.openai_api_key)
@@ -58,7 +63,9 @@ class LLMClient:
 
     def _get_default_model(self):
         """Gets the default model name for the selected provider."""
-        if self.llm_provider == "openai":
+        if self.llm_provider == "openrouter":
+            return self.settings.openrouter_model
+        elif self.llm_provider == "openai" or self.llm_provider == "openrouter":
             return "gpt-4o-mini"
         elif self.llm_provider == "claude":
             return "claude-3-opus-20240229" # Or another appropriate Claude 3 model
@@ -84,19 +91,19 @@ class LLMClient:
             if "IMPORTANT: The content should be written entirely in" not in prompt and language != "English":
                 prompt += f"\n\nIMPORTANT: Generate the response in {language}."
                 
-            if self.llm_provider == "openai":
+            if self.llm_provider == "openai" or self.llm_provider == "openrouter":
                 response = self.client.chat.completions.create(
                     model=self.model,
-                    messages=[{"role": "user", "content": prompt}],
+                    messages=[{"role": "user", "content": prompt + "\n\nPlease format any JSON output in markdown code blocks with ```json```" if self.llm_provider == "openrouter" else prompt}],
                     max_tokens=max_tokens,
                     temperature=temperature,
                 )
                 content = response.choices[0].message.content.strip()
-                # Track usage
-                input_tokens = len(prompt.split()) * 1.3
-                output_tokens = len(content.split()) * 1.3 if content else 0
-                cost = self.cost_tracker.calculate_cost(f"{self.llm_provider}/{self.model}", int(input_tokens), int(output_tokens))
-                self.cost_tracker.log_usage(self.llm_provider, self.model, "generate_content", int(input_tokens), int(output_tokens), cost)
+                # Post-process OpenRouter responses to ensure markdown JSON format
+                if self.llm_provider == "openrouter" and "```json" not in content and "{" in content:
+                    json_match = re.search(r'\{.*\}', content, re.DOTALL)
+                    if json_match:
+                        content = f"```json\n{json_match.group()}\n```"
                 return content
 
             elif self.llm_provider == "claude":

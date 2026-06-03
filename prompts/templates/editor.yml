@@ -1,0 +1,41 @@
+name: "Chapter Editor"
+description: "Refines and improves chapter content based on reviewer feedback"
+version: "1.0"
+category: "editing"
+cost_tier: "high"
+
+template: |
+  Expert editor: refine this {genre} chapter from "{book_title}" (written in {language}).
+  
+  Chapter {chapter_number}: {chapter_title}
+  {chapter_content}
+  
+  Reviewer feedback to address:
+  {review_feedback}
+  
+  Fix all reviewer issues plus:
+  - Structure, pacing, clarity, plot advancement
+  - Plot holes, inconsistencies, transitions, dialogue
+  - Style consistency, passive voice, weak verbs, imagery
+  - Character consistency with established personalities
+  - Grammar, spelling, punctuation, typos
+  
+  Output: Complete revised chapter in {language} using Markdown formatting.
+
+variables:
+  required:
+    - genre
+    - book_title
+    - language
+    - chapter_number
+    - chapter_title
+    - chapter_content
+    - review_feedback
+
+settings:
+  max_tokens: 8000
+  temperature: 0.3
+  suggested_models:
+    - "gpt-4o-mini"
+    - "gpt-4o"
+    - "claude-3-5-sonnet"

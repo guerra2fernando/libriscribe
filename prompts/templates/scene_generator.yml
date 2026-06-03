@@ -1,0 +1,40 @@
+name: "Scene Generator"
+description: "Generates individual scenes within chapters"
+version: "1.0"
+category: "content_generation"
+cost_tier: "medium"
+
+template: |
+  Write Scene {scene_number} for Chapter {chapter_number} of "{book_title}".
+  
+  Scene outline: {scene_outline}
+  Scene purpose: {scene_purpose}
+  Characters involved: {scene_characters}
+  Setting: {scene_setting}
+  
+  Write engaging scene content that:
+  - Advances the plot meaningfully
+  - Develops characters through action/dialogue
+  - Maintains consistent tone and pacing
+  - Connects smoothly with adjacent scenes
+  
+  Focus on showing rather than telling.
+  Language: {language}
+
+variables:
+  required:
+    - scene_number
+    - chapter_number
+    - book_title
+    - scene_outline
+    - scene_purpose
+    - scene_characters
+    - scene_setting
+    - language
+
+settings:
+  max_tokens: 2000
+  temperature: 0.8
+  suggested_models:
+    - "gpt-4o"
+    - "claude-3.5-sonnet"
