@@ -104,16 +104,27 @@ Create a `.env` file in the root directory and enter your API keys for the provi
 ```env
 # Standard Providers
 OPENAI_API_KEY=your_openai_key_here
+OPENAI_MODEL=gpt-4o-mini
+
 GOOGLE_AI_STUDIO_API_KEY=your_google_key_here
+GOOGLE_AI_STUDIO_MODEL=gemini-2.5-flash
+
 CLAUDE_API_KEY=your_claude_key_here
+CLAUDE_MODEL=claude-3-opus-20240229
+
 DEEPSEEK_API_KEY=your_deepseek_key_here
+DEEPSEEK_MODEL=deepseek-coder-6.7b-instruct
+
 MISTRAL_API_KEY=your_mistral_key_here
+MISTRAL_MODEL=mistral-medium-latest
 
 # OpenRouter Configuration
 OPENROUTER_API_KEY=your_openrouter_key_here
 OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
 OPENROUTER_MODEL=anthropic/claude-3-haiku
 ```
+
+LibriScribe reads these model values as provider defaults. In guided setup, Simple mode uses the `.env` default automatically, while Advanced mode lets you either keep the `.env` default or enter one custom model ID for the project.
 
 ### 3. Launch
 
@@ -171,6 +182,8 @@ Expert mode currently supports:
 - `libriscribe start --config <path>` for direct config-driven startup
 - JSON and YAML project definitions
 - reusable starter files in `examples/`
+- project-level model selection with `project.model`
+- optional per-agent model overrides with `project.agent_models`
 - workflow-stage controls for:
   - concept approval
   - outline review
@@ -199,6 +212,10 @@ project:
   target_audience: Young Adult
   num_chapters: "10"
   llm_provider: openai
+  model: gpt-4o-mini
+  agent_models:
+    outliner: gpt-4o-mini
+    editor: gpt-4o
 workflow:
   concept_approval: auto
   outline_review: prompt
@@ -213,6 +230,8 @@ Starter files are available in:
 
 - `examples/expert-config.json`
 - `examples/expert-config.yaml`
+
+When `project.agent_models` is provided, LibriScribe applies those model IDs only to the named agents and falls back to `project.model`, then to the provider default from `.env`.
 
 ---
 

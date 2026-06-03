@@ -1,9 +1,11 @@
 # src/libriscribe/knowledge_base.py
 
-from typing import Any, Dict, Optional, List, Union, Tuple
-from pydantic import BaseModel, Field, validator
 import json
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple, Union
+
+from pydantic import BaseModel, Field, validator
+
 
 class Character(BaseModel):
     name: str
@@ -18,13 +20,15 @@ class Character(BaseModel):
     external_conflicts: str = ""
     character_arc: str = ""
 
+
 class Scene(BaseModel):
     scene_number: int
     summary: str = ""
     characters: List[str] = []  # List of character names
     setting: str = ""
     goal: str = ""  # What's the purpose of this scene?
-    emotional_beat: str = "" # What's the primary emotion conveyed?
+    emotional_beat: str = ""  # What's the primary emotion conveyed?
+
 
 class Chapter(BaseModel):
     chapter_number: int
@@ -33,8 +37,9 @@ class Chapter(BaseModel):
     scenes: List[Scene] = []
     # We don't store the full chapter text *here*, just metadata and scenes.
 
+
 class Worldbuilding(BaseModel):
-    #Keep this empty for now, and we will use it on the agents
+    # Keep this empty for now, and we will use it on the agents
     geography: str = ""
     culture_and_society: str = ""
     history: str = ""
@@ -48,37 +53,36 @@ class Worldbuilding(BaseModel):
     religions_and_beliefs: str = ""
     economy: str = ""
     conflicts: str = ""
-    #Non fiction
-    setting_context: str =""
+    # Non fiction
+    setting_context: str = ""
     key_figures: str = ""
     major_events: str = ""
     underlying_causes: str = ""
-    consequences: str =""
+    consequences: str = ""
     relevant_data: str = ""
     different_perspectives: str = ""
-    key_concepts: str =""
-    #business
+    key_concepts: str = ""
+    # business
     industry_overview: str = ""
-    target_audience: str =""
-    market_analysis:str = ""
+    target_audience: str = ""
+    market_analysis: str = ""
     business_model: str = ""
     marketing_and_sales_strategy: str = ""
     operations: str = ""
     financial_projections: str = ""
     management_team: str = ""
     legal_and_regulatory_environment: str = ""
-    risks_and_challenges: str =""
-    opportunities_for_growth: str =""
-    #research
+    risks_and_challenges: str = ""
+    opportunities_for_growth: str = ""
+    # research
     introduction: str = ""
     literature_review: str = ""
-    methodology: str =""
-    results: str =""
+    methodology: str = ""
+    results: str = ""
     discussion: str = ""
     conclusion: str = ""
-    references: str =""
-    appendices: str =""
-
+    references: str = ""
+    appendices: str = ""
 
 
 class ProjectKnowledgeBase(BaseModel):
@@ -89,24 +93,27 @@ class ProjectKnowledgeBase(BaseModel):
     category: str = "Unknown Category"
     language: str = "English"
     num_characters: Union[int, Tuple[int, int]] = 0  # Keep, used by character generator
-    num_characters_str: str = "" #Keep for advanced
-    worldbuilding_needed: bool = False #Keep, used by worldbuilding generator
+    num_characters_str: str = ""  # Keep for advanced
+    worldbuilding_needed: bool = False  # Keep, used by worldbuilding generator
     review_preference: str = "AI"
     book_length: str = ""
     logline: str = "No logline available"
     tone: str = "Informative"
     target_audience: str = "General"
-    num_chapters: Union[int, Tuple[int, int]] = 1  # Keep for chapter generation, advanced mode
-    num_chapters_str: str = "" #Keep for advanced
+    num_chapters: Union[int, Tuple[int, int]] = (
+        1  # Keep for chapter generation, advanced mode
+    )
+    num_chapters_str: str = ""  # Keep for advanced
     llm_provider: str = "openai"
-    dynamic_questions: Dict[str, str] = {} #Keep for advanced
+    model: str = ""
+    agent_models: Dict[str, str] = {}
+    dynamic_questions: Dict[str, str] = {}  # Keep for advanced
 
     characters: Dict[str, Character] = {}  # Character name -> Character object
     worldbuilding: Worldbuilding = Field(default_factory=Worldbuilding)
     chapters: Dict[int, Chapter] = {}  # Chapter number -> Chapter object
-    outline: str = "" # Store outline as markdown
+    outline: str = ""  # Store outline as markdown
     project_dir: Optional[Path] = None
-
 
     @validator("num_characters", "num_chapters", pre=True)
     def parse_range_or_plus(cls, value):
@@ -158,18 +165,17 @@ class ProjectKnowledgeBase(BaseModel):
 
     def to_json(self) -> str:
         """Serializes the knowledge base to a JSON string."""
-        return self.model_dump_json(indent=4) # Use model_dump_json
+        return self.model_dump_json(indent=4)  # Use model_dump_json
 
     @classmethod
     def from_json(cls, json_str: str) -> "ProjectKnowledgeBase":
         """Deserializes the knowledge base from a JSON string."""
-        return cls.model_validate_json(json_str) # Use model_validate_json
+        return cls.model_validate_json(json_str)  # Use model_validate_json
 
     def save_to_file(self, file_path: str):
         """Saves the knowledge base to a JSON file."""
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(self.to_json())
-
 
     @classmethod
     def load_from_file(cls, file_path: str) -> Optional["ProjectKnowledgeBase"]:
@@ -185,11 +191,11 @@ class ProjectKnowledgeBase(BaseModel):
         except Exception as e:
             print(f"ERROR loading knowledge base from {file_path}: {e}")
             return None
-    
+
     worldbuilding_needed: bool = False
     # Make worldbuilding conditional on worldbuilding_needed
     worldbuilding: Optional[Worldbuilding] = None
-    
+
     # Add a validator to ensure worldbuilding is None when not needed
     @validator("worldbuilding", pre=True, always=True)
     def set_worldbuilding(cls, v, values):

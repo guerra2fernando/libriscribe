@@ -44,6 +44,8 @@ class ExpertProjectConfig(BaseModel):
     num_chapters: Union[int, str] = 1
     num_chapters_str: str = ""
     llm_provider: str = "openai"
+    model: str = ""
+    agent_models: Dict[str, str] = Field(default_factory=dict)
     dynamic_questions: Dict[str, str] = Field(default_factory=dict)
 
     @validator("review_preference", pre=True)

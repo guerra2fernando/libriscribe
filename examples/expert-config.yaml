@@ -18,6 +18,10 @@ project:
   num_chapters: "10"
   num_chapters_str: "10"
   llm_provider: openai
+  model: gpt-4o-mini
+  agent_models:
+    outliner: gpt-4o-mini
+    editor: gpt-4o
   dynamic_questions:
     q1: What emotional wound drives the protagonist?
     q2: What makes the empire worth restoring or destroying?

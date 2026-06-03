@@ -1,4 +1,5 @@
 import logging
+import re
 
 import anthropic  # For Claude
 import requests  # For DeepSeek and Mistral
@@ -29,7 +30,8 @@ class LLMClient:
         self.settings = Settings()
         self.llm_provider = llm_provider
         self.client = self._get_client()  # Initialize the correct client
-        self.model = self._get_default_model()
+        self.default_model = self._get_default_model()
+        self.model = self.default_model
         self.cost_tracker = CostTracker()
 
     def _get_client(self):
@@ -67,20 +69,23 @@ class LLMClient:
         if self.llm_provider == "openrouter":
             return self.settings.openrouter_model
         elif self.llm_provider == "openai" or self.llm_provider == "openrouter":
-            return "gpt-4o-mini"
+            return self.settings.openai_model
         elif self.llm_provider == "claude":
-            return "claude-3-opus-20240229"  # Or another appropriate Claude 3 model
+            return self.settings.claude_model
         elif self.llm_provider == "google_ai_studio":
-            return "gemini-2.5-flash"
+            return self.settings.google_ai_studio_model
         elif self.llm_provider == "deepseek":
-            return "deepseek-coder-6.7b-instruct"
+            return self.settings.deepseek_model
         elif self.llm_provider == "mistral":
-            return "mistral-medium-latest"
+            return self.settings.mistral_model
         else:
             return "unknown"  # Should not happen, but good for safety
 
     def set_model(self, model_name: str):
         self.model = model_name
+
+    def reset_model(self):
+        self.model = self.default_model
 
     @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
     def generate_content(

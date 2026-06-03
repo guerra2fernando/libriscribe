@@ -54,9 +54,13 @@ class ProjectManagerAgent:
         self.agents = {}  # Will be initialized after llm
         self.logger = logging.getLogger(self.__class__.__name__)  # ADD THIS
 
-    def initialize_llm_client(self, llm_provider: str):
+    def initialize_llm_client(
+        self, llm_provider: str, model_name: Optional[str] = None
+    ):
         """Initializes the LLMClient and agents."""
         self.llm_client = LLMClient(llm_provider)
+        if model_name:
+            self.llm_client.set_model(model_name)
         self.agents = {
             "content_reviewer": ContentReviewerAgent(self.llm_client),  # Pass client
             "concept_generator": ConceptGeneratorAgent(self.llm_client),
@@ -219,6 +223,21 @@ class ProjectManagerAgent:
                 f"Project data not found for project: {project_name}"
             )
 
+    def _get_model_for_agent(self, agent_name: str) -> Optional[str]:
+        if not self.project_knowledge_base:
+            return self.llm_client.model if self.llm_client else None
+
+        agent_models = self.project_knowledge_base.get("agent_models", {}) or {}
+        project_model = self.project_knowledge_base.get("model", "")
+
+        if agent_name in agent_models and agent_models[agent_name].strip():
+            return agent_models[agent_name].strip()
+        if project_model and str(project_model).strip():
+            return str(project_model).strip()
+        if self.llm_client:
+            return self.llm_client.default_model
+        return None
+
     def run_agent(self, agent_name: str, *args, **kwargs):
         """Runs a specific agent, passing project_data."""
         if agent_name not in self.agents:
@@ -226,6 +245,10 @@ class ProjectManagerAgent:
             return
 
         agent = self.agents[agent_name]
+        if self.llm_client:
+            selected_model = self._get_model_for_agent(agent_name)
+            if selected_model:
+                self.llm_client.set_model(selected_model)
         # Pass project_knowledge_base to agents that need it
         if agent_name in [
             "concept_generator",

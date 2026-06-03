@@ -50,11 +50,46 @@ app = typer.Typer()
 project_manager = ProjectManagerAgent(llm_client=None)
 logger = logging.getLogger(__name__)
 
+PROVIDER_LABELS = {
+    "openai": "OpenAI",
+    "claude": "Claude",
+    "google_ai_studio": "Google AI Studio",
+    "deepseek": "DeepSeek",
+    "mistral": "Mistral",
+    "openrouter": "OpenRouter",
+}
 
-def select_llm(project_knowledge_base: ProjectKnowledgeBase):
-    """Lets the user select an LLM provider."""
+AGENT_MODEL_OPTIONS = [
+    ("concept_generator", "Concept Generator"),
+    ("outliner", "Outliner"),
+    ("character_generator", "Character Generator"),
+    ("worldbuilding", "Worldbuilding"),
+    ("chapter_writer", "Chapter Writer"),
+    ("content_reviewer", "Content Reviewer"),
+    ("editor", "Editor"),
+    ("style_editor", "Style Editor"),
+    ("researcher", "Researcher"),
+    ("formatting", "Formatting"),
+]
+
+
+def get_default_model_for_provider(
+    provider: str, settings: Optional[Settings] = None
+) -> str:
+    settings = settings or Settings()
+    return {
+        "openai": settings.openai_model,
+        "claude": settings.claude_model,
+        "google_ai_studio": settings.google_ai_studio_model,
+        "deepseek": settings.deepseek_model,
+        "mistral": settings.mistral_model,
+        "openrouter": settings.openrouter_model,
+    }.get(provider, "")
+
+
+def get_available_llm_providers(settings: Optional[Settings] = None) -> List[str]:
+    settings = settings or Settings()
     available_llms = []
-    settings = Settings()
 
     if settings.openrouter_api_key:
         available_llms.append("openrouter")
@@ -69,29 +104,59 @@ def select_llm(project_knowledge_base: ProjectKnowledgeBase):
     if settings.mistral_api_key:
         available_llms.append("mistral")
 
+    return available_llms
+
+
+def select_llm(project_knowledge_base: ProjectKnowledgeBase):
+    """Lets the user select an LLM provider and applies the provider default model."""
+    settings = Settings()
+    available_llms = get_available_llm_providers(settings)
+
     if not available_llms:
         console.print(
             "[red]❌ No LLM API keys found in .env file. Please add at least one.[/red]"
         )
         raise typer.Exit(code=1)
 
-    console.print("")
-    llm_choice = select_from_list("🤖 Select your preferred AI model:", available_llms)
+    provider_options = [
+        f"{PROVIDER_LABELS.get(provider, provider)} (default: {get_default_model_for_provider(provider, settings)})"
+        for provider in available_llms
+    ]
+    option_to_provider = dict(zip(provider_options, available_llms))
 
-    # Convert display name back to API identifier
-    if "OpenAI" in llm_choice:
-        llm_choice = "openai"
-    elif "Claude" in llm_choice:
-        llm_choice = "claude"
-    elif "Google Gemini" in llm_choice:
-        llm_choice = "google_ai_studio"
-    elif "DeepSeek" in llm_choice:
-        llm_choice = "deepseek"
-    elif "Mistral" in llm_choice:
-        llm_choice = "mistral"
+    console.print("")
+    selected_option = select_from_list(
+        "🤖 Select your preferred AI provider:", provider_options
+    )
+    llm_choice = option_to_provider[selected_option]
 
     project_knowledge_base.set("llm_provider", llm_choice)
+    project_knowledge_base.set(
+        "model", get_default_model_for_provider(llm_choice, settings)
+    )
     return llm_choice
+
+
+def configure_advanced_model(project_knowledge_base: ProjectKnowledgeBase):
+    """Lets advanced users keep the .env default model or enter a custom one."""
+    provider = project_knowledge_base.get("llm_provider", "")
+    if not provider:
+        return ""
+
+    default_model = get_default_model_for_provider(provider)
+    console.print("")
+    choice = select_from_list(
+        f"🧠 Which {PROVIDER_LABELS.get(provider, provider)} model would you like to use?",
+        [f"Use default from .env ({default_model})", "Enter custom model ID"],
+    )
+
+    if choice == "Enter custom model ID":
+        custom_model = typer.prompt("Enter the model ID")
+        project_knowledge_base.set("model", custom_model)
+        return custom_model
+
+    project_knowledge_base.set("model", default_model)
+    return default_model
 
 
 def introduction():
@@ -519,7 +584,9 @@ def simple_mode():
     select_language(project_knowledge_base)
 
     llm_choice = select_llm(project_knowledge_base)
-    project_manager.initialize_llm_client(llm_choice)
+    project_manager.initialize_llm_client(
+        llm_choice, project_knowledge_base.get("model", "")
+    )
 
     get_category_and_genre(project_knowledge_base)
     get_book_length(project_knowledge_base)
@@ -845,7 +912,10 @@ def advanced_mode():
 
     # LLM selection
     llm_choice = select_llm(project_knowledge_base)
-    project_manager.initialize_llm_client(llm_choice)
+    configure_advanced_model(project_knowledge_base)
+    project_manager.initialize_llm_client(
+        llm_choice, project_knowledge_base.get("model", "")
+    )
 
     get_category_and_genre(project_knowledge_base)
 
@@ -932,7 +1002,10 @@ def expert_mode(config_path: Optional[str] = None):
         save_recent_expert_config(config)
         project_knowledge_base = build_project_knowledge_base(config)
 
-        project_manager.initialize_llm_client(project_knowledge_base.llm_provider)
+        project_manager.initialize_llm_client(
+            project_knowledge_base.llm_provider,
+            project_knowledge_base.get("model", ""),
+        )
         project_manager.initialize_project_with_data(project_knowledge_base)
 
         console.print(f"[green]Loaded expert configuration from {source}[/green]")
