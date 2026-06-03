@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="libriscribe",
-    version="0.3.0",
+    version="0.4.0",
     python_requires=">=3.10",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
