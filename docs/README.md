@@ -24,18 +24,23 @@ $ yarn build
 
 This command generates static content into the `build` directory and can be served using any static contents hosting service.
 
-### Deployment
+### Deployment of Docs
 
-Using SSH:
+The recommended deployment flow is now:
 
-```
-$ USE_SSH=true yarn deploy
-```
-
-Not using SSH:
+1. Build the docs locally:
 
 ```
-$ GIT_USER=<Your GitHub username> yarn deploy
+$ npm install
+$ npm run build
 ```
 
-If you are using GitHub pages for hosting, this command is a convenient way to build the website and push to the `gh-pages` branch.
+2. Publish the contents of `build/` to a `gh-pages` branch.
+
+If you still want to use Docusaurus's built-in branch deployment helper, you can also run:
+
+```
+$ GIT_USER=<Your GitHub username> npm run deploy
+```
+
+This pushes the built site to the `gh-pages` branch, which can then be served directly by GitHub Pages without GitHub Actions.
