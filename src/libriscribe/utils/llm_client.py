@@ -103,12 +103,6 @@ class LLMClient:
                     json_match = re.search(r'\{.*\}', content, re.DOTALL)
                     if json_match:
                         content = f"```json\n{json_match.group()}\n```"
-
-                # Track usage
-                input_tokens = len(prompt.split()) * 1.3
-                output_tokens = len(content.split()) * 1.3 if content else 0
-                cost = self.cost_tracker.calculate_cost(f"{self.llm_provider}/{self.model}", int(input_tokens), int(output_tokens))
-                self.cost_tracker.log_usage(self.llm_provider, self.model, "generate_content", int(input_tokens), int(output_tokens), cost)
                 return content
 
             elif self.llm_provider == "claude":
