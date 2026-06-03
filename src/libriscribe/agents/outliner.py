@@ -1,15 +1,14 @@
 # src/libriscribe/agents/outliner.py
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Optional
 from pathlib import Path
 
 from libriscribe.utils.llm_client import LLMClient
 from libriscribe.utils import prompts_context as prompts
 from libriscribe.agents.agent_base import Agent
-from libriscribe.utils.file_utils import read_markdown_file, write_markdown_file, extract_json_from_markdown, write_json_file
+from libriscribe.utils.file_utils import write_markdown_file, write_json_file
 from libriscribe.knowledge_base import ProjectKnowledgeBase, Chapter, Scene
-import typer
 from rich.console import Console
 
 console = Console()

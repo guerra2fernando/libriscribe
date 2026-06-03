@@ -2,7 +2,7 @@
 
 import json
 import os
-from typing import Dict, Any, Optional, Type, TypeVar, Union, List
+from typing import Dict, Any, Optional, Type, TypeVar, Union
 import logging
 from pathlib import Path
 from pydantic import BaseModel, ValidationError  # Import ValidationError

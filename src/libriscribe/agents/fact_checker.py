@@ -1,5 +1,4 @@
 # src/libriscribe/agents/fact_checker.py 
-import asyncio
 import logging
 from typing import Any, Dict, List
 
@@ -7,8 +6,6 @@ from libriscribe.agents.agent_base import Agent
 from libriscribe.utils.llm_client import LLMClient
 from libriscribe.utils.file_utils import read_markdown_file, extract_json_from_markdown
 # For web scraping
-import requests
-from bs4 import BeautifulSoup
 from rich.console import Console
 console = Console()
 

@@ -1,12 +1,9 @@
 # src/libriscribe/agents/concept_generator.py
-import asyncio
 import json
 import logging
-from typing import Any, Dict, List, Optional
-from pathlib import Path
+from typing import Optional
 
 from libriscribe.utils.llm_client import LLMClient
-from libriscribe.utils import prompts_context as prompts
 from libriscribe.agents.agent_base import Agent
 from libriscribe.utils.file_utils import (
     extract_json_from_markdown,

@@ -5,7 +5,7 @@ from pathlib import Path
 
 from libriscribe.agents.agent_base import Agent
 from libriscribe.utils import prompts_context as prompts
-from libriscribe.utils.file_utils import read_markdown_file, write_markdown_file, read_json_file, extract_json_from_markdown
+from libriscribe.utils.file_utils import read_markdown_file, write_markdown_file
 from libriscribe.knowledge_base import ProjectKnowledgeBase
 from libriscribe.utils.llm_client import LLMClient
 from libriscribe.agents.content_reviewer import ContentReviewerAgent

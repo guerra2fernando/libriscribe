@@ -1,7 +1,7 @@
 # src/libriscribe/agents/project_manager.py
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Optional
 from pathlib import Path
 
 from libriscribe.agents.concept_generator import ConceptGeneratorAgent
