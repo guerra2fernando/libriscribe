@@ -1420,6 +1420,96 @@ def resume(project_name: str = typer.Option(..., prompt="Project name to resume"
         print(f"Error loading project data: {e}")
 
 
+# --- Retrieval CLI Commands ---
+retrieval_app = typer.Typer(help="Manage local search and retrieval index.")
+
+
+def _load_retrieval_project(project_name: str) -> None:
+    project_manager.load_project_data(project_name)
+    if not project_manager.project_knowledge_base:
+        console.print(f"[red]Error:[/red] Project '{project_name}' not found.")
+        raise typer.Exit(code=1)
+
+    ret_config = getattr(project_manager.project_knowledge_base, "retrieval", None)
+    if not ret_config:
+        from libriscribe.retrieval.models import RetrievalConfig
+        project_manager.project_knowledge_base.retrieval = RetrievalConfig(enabled=True, mode="keyword")
+        project_manager.save_project_data()
+    elif not ret_config.enabled:
+        ret_config.enabled = True
+        if ret_config.mode == "disabled":
+            ret_config.mode = "keyword"
+        project_manager.save_project_data()
+
+
+@retrieval_app.command()
+def rebuild(project: str = typer.Option(..., "--project", "-p", help="Project name")):
+    """Forces a clean, complete rebuild of all local retrieval files and indexes."""
+    _load_retrieval_project(project)
+    console.print(f"[cyan]Rebuilding retrieval index for project '{project}'...[/cyan]")
+    project_manager.rebuild_retrieval_index()
+    console.print("[green]Rebuild complete![/green]")
+
+
+@retrieval_app.command()
+def refresh(project: str = typer.Option(..., "--project", "-p", help="Project name")):
+    """Refreshes the index incrementally if changes are detected in sources."""
+    _load_retrieval_project(project)
+    console.print(f"[cyan]Refreshing retrieval index for project '{project}'...[/cyan]")
+    project_manager.refresh_retrieval_index()
+    console.print("[green]Refresh check complete![/green]")
+
+
+@retrieval_app.command()
+def search(
+    project: str = typer.Option(..., "--project", "-p", help="Project name"),
+    query: str = typer.Option(..., "--query", "-q", help="Search query"),
+    mode: str = typer.Option("keyword", "--mode", "-m", help="Search mode (keyword)"),
+    top_k: int = typer.Option(6, "--top-k", "-k", help="Number of results to return"),
+):
+    """Queries the local retrieval index."""
+    _load_retrieval_project(project)
+    project_manager.initialize_retrieval()
+
+    console.print(f"[cyan]Searching in '{project}' for:[/cyan] [bold]'{query}'[/bold] [cyan](mode: {mode}, top_k: {top_k})...[/cyan]")
+    results = project_manager.search_service.search(query, mode=mode, top_k=top_k)
+
+    if not results:
+        console.print("[yellow]No results found.[/yellow]")
+        return
+
+    console.print(f"\n[green]Found {len(results)} results:[/green]")
+    for i, res in enumerate(results, 1):
+        console.print(f"\n[bold]{i}. {res.title}[/bold] (Score: {res.score:.4f}, Type: {res.source_type})")
+        snippet = res.text[:200] + "..." if len(res.text) > 200 else res.text
+        console.print(f"   [dim]{snippet}[/dim]")
+
+
+@retrieval_app.command()
+def xref(
+    project: str = typer.Option(..., "--project", "-p", help="Project name"),
+    entity: str = typer.Option(..., "--entity", "-e", help="Entity name"),
+):
+    """Looks up co-occurrences and cross-references of an entity."""
+    _load_retrieval_project(project)
+    project_manager.initialize_retrieval()
+
+    console.print(f"[cyan]Looking up cross-references for entity:[/cyan] [bold]'{entity}'[/bold]...")
+    entry = project_manager.search_service.search_cross_references(entity)
+
+    if not entry:
+        console.print(f"[yellow]No cross-references found for entity '{entity}'.[/yellow]")
+        return
+
+    console.print(f"\n[green]Cross-Reference Entry for '{entry.entity_name}' ({entry.entity_type}):[/green]")
+    console.print(f"  [bold]Chapters referenced in:[/bold] {sorted(list(set(entry.referenced_in_chapters)))}")
+    console.print(f"  [bold]Related/co-occurring entities:[/bold] {', '.join(entry.related_entities) or 'None'}")
+    console.print(f"  [bold]Referenced in chunks:[/bold] {len(entry.referenced_in_chunks)} chunk(s)")
+
+
+app.add_typer(retrieval_app, name="retrieval")
+
+
 if __name__ == "__main__":
     # Display environment info for debugging
     if "--debug" in sys.argv:

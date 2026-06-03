@@ -54,6 +54,9 @@ class ProjectManagerAgent:
         self.llm_client: LLMClient | None = llm_client
         self.agents: dict[str, Agent] = {}
         self.logger: logging.Logger = logging.getLogger(self.__class__.__name__)
+        from libriscribe.retrieval.search_service import NullSearchService
+        self.search_service = NullSearchService()
+
 
     def initialize_llm_client(self, llm_provider: str, model_name: str | None = None):
         """Initializes the LLMClient and agents."""
@@ -87,7 +90,9 @@ class ProjectManagerAgent:
             self.project_knowledge_base.worldbuilding = None
 
         self.save_project_data()
+        self.initialize_retrieval()
         self.logger.info(f"🚀 Initialized project: {project_data.project_name}")
+
         console.print(
             f"✨ Project [green]'{project_data.project_name}'[/green] initialized successfully!"
         )
@@ -259,8 +264,10 @@ class ProjectManagerAgent:
                 # Verify save
                 if Path(file_path).exists():
                     self._sync_project_status()
+                    self.refresh_retrieval_index()
                 else:
                     logger.error(f"File not created: {file_path}")
+
             except Exception as e:
                 logger.exception(f"Error saving project data: {e}")
                 print("ERROR: Failed to save project data. See log.")
@@ -277,8 +284,10 @@ class ProjectManagerAgent:
                 self.project_knowledge_base = data
                 # CRITICAL: Set project_dir in project_knowledge_base
                 self.project_knowledge_base.project_dir = self.project_dir
+                self.initialize_retrieval()
             else:
                 raise ValueError("Failed to load or validate project data.")
+
 
         else:
             raise FileNotFoundError(
@@ -735,3 +744,64 @@ class ProjectManagerAgent:
             else:  # Regular text
                 pdf.multi_cell(0, 10, line)
         pdf.output(output_path)
+
+    def initialize_retrieval(self) -> None:
+        """Initializes the retrieval search service conditionally."""
+        if not self.project_knowledge_base or not self.project_dir:
+            from libriscribe.retrieval.search_service import NullSearchService
+            self.search_service = NullSearchService()
+            return
+
+        ret_config = getattr(self.project_knowledge_base, "retrieval", None)
+        if not ret_config or not ret_config.enabled:
+            from libriscribe.retrieval.search_service import NullSearchService
+            self.search_service = NullSearchService()
+            return
+
+        try:
+            from libriscribe.retrieval.search_service import SearchServiceImpl
+            self.search_service = SearchServiceImpl(self.project_dir, ret_config)
+            self.logger.info("Initialized retrieval search service.")
+        except Exception as e:
+            self.logger.warning(f"Could not load retrieval search service: {e}. Falling back.")
+            from libriscribe.retrieval.search_service import NullSearchService
+            self.search_service = NullSearchService()
+
+    def rebuild_retrieval_index(self) -> None:
+        """Fully rebuilds the retrieval indexes for the current project."""
+        if not self.project_knowledge_base or not self.project_dir:
+            return
+
+        ret_config = getattr(self.project_knowledge_base, "retrieval", None)
+        if not ret_config or not ret_config.enabled:
+            return
+
+        try:
+            from libriscribe.retrieval.index_manager import IndexManager
+            manager = IndexManager(self.project_knowledge_base, self.project_dir, ret_config)
+            manager.rebuild_index()
+            # Reload search service to pick up newly built indexes
+            self.initialize_retrieval()
+            self.logger.info("Rebuilt retrieval index successfully.")
+        except Exception as e:
+            self.logger.exception(f"Failed to rebuild retrieval index: {e}")
+
+    def refresh_retrieval_index(self) -> None:
+        """Refreshes the retrieval indexes incrementally if there are modifications."""
+        if not self.project_knowledge_base or not self.project_dir:
+            return
+
+        ret_config = getattr(self.project_knowledge_base, "retrieval", None)
+        if not ret_config or not ret_config.enabled or not ret_config.auto_index:
+            return
+
+        try:
+            from libriscribe.retrieval.index_manager import IndexManager
+            manager = IndexManager(self.project_knowledge_base, self.project_dir, ret_config)
+            if manager.refresh_index():
+                # Reload search service to pick up updated indexes
+                self.initialize_retrieval()
+                self.logger.info("Refreshed retrieval index successfully.")
+        except Exception as e:
+            self.logger.exception(f"Failed to refresh retrieval index: {e}")
+

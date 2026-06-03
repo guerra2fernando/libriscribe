@@ -22,4 +22,19 @@ class Settings(BaseSettings):
     projects_dir: str = str(Path(__file__).parent.parent.parent / "projects")
     default_llm: str = "openai"  # Set a default
 
+    # Retrieval Defaults
+    retrieval_enabled: bool = False
+    retrieval_default_mode: str = "disabled"
+    retrieval_backend: str = "local"
+    retrieval_embedding_provider: str = "sentence-transformers"
+    retrieval_embedding_model: str = "all-MiniLM-L6-v2"
+    retrieval_chroma_path: str = ""
+    openai_embedding_model: str = "text-embedding-3-small"
+    mongodb_vector_uri: str = ""
+    pinecone_api_key: str = ""
+    pinecone_index_name: str = ""
+    weaviate_url: str = ""
+    weaviate_api_key: str = ""
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")  # type: ignore
+

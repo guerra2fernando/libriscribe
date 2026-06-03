@@ -84,6 +84,12 @@ graph TD
 *   **Worldbuilding & Character Generation:** Generate complex multi-dimensional character profiles and coherent cultures.
 *   **Chapter Writing & Refining:** Continuous draft-review cycles via an expert editing loops.
 
+### 6. Local Retrieval & Knowledge Search 🔍
+*   **Automatic Parsing & Chunking:** Auto-extracts character profiles, worldbuilding, summaries, and full chapters into searchable tokens.
+*   **Exact Tag-Based Filters:** Constrain queries to specific documents (e.g., character profiles or outline sections) using exact filters.
+*   **Robust Fallback Keyword Search:** Employs a sub-linear TF-IDF pure-Python search fallback if `rank-bm25` is not installed, requiring zero machine-learning dependencies.
+*   **Automatic Cross-Reference Graphing:** Dynamically indexes co-occurrences of key characters and locations across all chapter chunks.
+
 ---
 
 ## 🚀 Quickstart
@@ -151,6 +157,25 @@ You can also jump straight into Expert mode from the CLI:
 ```bash
 libriscribe start --config examples/expert-config.yaml
 ```
+
+### 4. Local Retrieval CLI
+Manage and search your project's knowledge base and drafts directly:
+*   **Rebuild index:**
+    ```bash
+    libriscribe retrieval rebuild --project my_project
+    ```
+*   **Refresh index incrementally (hash-based checks):**
+    ```bash
+    libriscribe retrieval refresh --project my_project
+    ```
+*   **Query the index (Keyword search):**
+    ```bash
+    libriscribe retrieval search --project my_project --query "Mira Thorn"
+    ```
+*   **Lookup cross-references & co-occurrences of an entity:**
+    ```bash
+    libriscribe retrieval xref --project my_project --entity "Castle Iron"
+    ```
 
 ---
 
@@ -302,6 +327,8 @@ All global execution costs and API calls are written directly to your workspace:
 - [ ] **Model Performance Benchmarking**
 
 ### 🔍 Vector Store & Search Enhancement
+- [x] **Core Scaffolding & Local Keyword Retrieval** (Phase 0 + Phase 1)
+- [x] **Local Entity Cross-Referencing & BM25/TF-IDF Fallback Search**
 - [ ] **Multi-Vector Database Support**: ChromaDB, MongoDB Vector Search, Pinecone, Weaviate
 - [ ] **Advanced Search Features**: Semantic Search, Hybrid Search (Keywords + Semantic), Cross-Reference Search
 - [ ] **Embedding Models Integration**: Multiple Embedding Model Support, Custom Embedding Training

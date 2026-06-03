@@ -5,6 +5,8 @@ from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, Field, field_validator, model_validator
+from libriscribe.retrieval.models import RetrievalConfig
+
 
 
 class Character(BaseModel):
@@ -105,6 +107,7 @@ class ProjectKnowledgeBase(BaseModel):
     chapter_writing_mode: str = "prompt"
     chapter_error_mode: str = "stop"
     dynamic_questions: dict[str, str] = Field(default_factory=dict)
+    retrieval: RetrievalConfig = Field(default_factory=RetrievalConfig)
 
     characters: dict[str, Character] = Field(default_factory=dict)
     worldbuilding: Worldbuilding | None = None

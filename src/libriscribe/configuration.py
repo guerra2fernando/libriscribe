@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field, ValidationError, validator
 
 from libriscribe.knowledge_base import ProjectKnowledgeBase
 from libriscribe.settings import Settings
+from libriscribe.retrieval.models import RetrievalConfig
 
 
 class StageMode(str, Enum):
@@ -54,6 +55,7 @@ class ExpertProjectConfig(BaseModel):
     fallback_chain: list[str] = Field(default_factory=list)
     agent_fallback_chains: Dict[str, list[str]] = Field(default_factory=dict)
     dynamic_questions: Dict[str, str] = Field(default_factory=dict)
+    retrieval: RetrievalConfig = Field(default_factory=RetrievalConfig)
 
     @validator("review_preference", pre=True)
     def normalize_review_preference(cls, value: Any) -> str:
