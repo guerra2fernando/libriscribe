@@ -1,0 +1,35 @@
+name: "Research Agent"
+description: "Conducts research and gathers information for writing projects"
+version: "1.0"
+category: "research"
+cost_tier: "low"
+
+template: |
+  Research the following topic for a {genre} writing project.
+  
+  Research query: {query}
+  Project context: {project_context}
+  
+  Provide:
+  - Key facts and information
+  - Relevant details for storytelling
+  - Historical or technical accuracy notes
+  - Interesting angles or perspectives
+  - Sources for further research
+  
+  Focus on information that enhances authenticity and depth.
+  Language: {language}
+
+variables:
+  required:
+    - genre
+    - query
+    - project_context
+    - language
+
+settings:
+  max_tokens: 1000
+  temperature: 0.3
+  suggested_models:
+    - "gpt-4o-mini"
+    - "claude-3-haiku"

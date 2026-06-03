@@ -1,0 +1,37 @@
+name: "Content Reviewer"
+description: "Reviews and provides feedback on chapter content quality"
+version: "1.0"
+category: "review"
+cost_tier: "medium"
+
+template: |
+  Review Chapter {chapter_number} of this {genre} book for content quality.
+  
+  Chapter content:
+  {chapter_content}
+  
+  Evaluate and provide feedback on:
+  - Plot consistency and logic
+  - Character development and authenticity
+  - Pacing and narrative flow
+  - Dialogue quality and believability
+  - Scene transitions and structure
+  - Genre conventions and reader expectations
+  
+  Provide specific, actionable feedback for improvement.
+  Highlight both strengths and areas needing work.
+  Language: {language}
+
+variables:
+  required:
+    - chapter_number
+    - genre
+    - chapter_content
+    - language
+
+settings:
+  max_tokens: 1500
+  temperature: 0.4
+  suggested_models:
+    - "claude-3.5-sonnet"
+    - "gpt-4o"

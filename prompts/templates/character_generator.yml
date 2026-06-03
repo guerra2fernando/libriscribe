@@ -1,0 +1,38 @@
+name: "Character Generator"
+description: "Creates detailed character profiles and development arcs"
+version: "1.0"
+category: "content_generation"
+cost_tier: "medium"
+
+template: |
+  Generate detailed character profiles for this {genre} story.
+  
+  Story context: {story_context}
+  Number of characters: {num_characters}
+  Character requirements: {character_requirements}
+  
+  For each character, provide:
+  - Name and basic demographics
+  - Personality traits and quirks
+  - Background and motivation
+  - Character arc and development
+  - Relationships with other characters
+  - Dialogue style and voice
+  
+  Output in JSON format with character array.
+  Language: {language}
+
+variables:
+  required:
+    - genre
+    - story_context
+    - num_characters
+    - character_requirements
+    - language
+
+settings:
+  max_tokens: 4000
+  temperature: 0.8
+  suggested_models:
+    - "gpt-4o"
+    - "claude-3.5-sonnet"
