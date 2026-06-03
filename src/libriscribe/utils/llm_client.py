@@ -71,7 +71,7 @@ class LLMClient:
         elif self.llm_provider == "claude":
             return "claude-3-opus-20240229"  # Or another appropriate Claude 3 model
         elif self.llm_provider == "google_ai_studio":
-            return "gemini-1.5-pro-002"
+            return "gemini-2.5-flash"
         elif self.llm_provider == "deepseek":
             return "deepseek-coder-6.7b-instruct"
         elif self.llm_provider == "mistral":
@@ -162,6 +162,9 @@ class LLMClient:
                     config=google_genai_types.GenerateContentConfig(
                         temperature=temperature,
                         max_output_tokens=max_tokens,
+                        thinking_config=google_genai_types.ThinkingConfig(
+                            thinking_budget=0,
+                        ),
                     ),
                 )
                 text_response = (response.text or "").strip()
