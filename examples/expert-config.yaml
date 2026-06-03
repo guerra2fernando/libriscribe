@@ -30,6 +30,7 @@ workflow:
   outline_review: prompt
   character_generation: auto
   worldbuilding_generation: auto
-  chapter_writing: prompt
+  chapter_writing: auto
+  chapter_error_mode: continue
   formatting: auto
   output_format: markdown

@@ -54,6 +54,8 @@ Expert mode can define:
 - a project-wide model with `project.model`
 - per-agent model overrides with `project.agent_models`
 - workflow automation preferences
+- whether chapter writing pauses between chapters or runs across the whole book automatically
+- whether chapter failures should stop the run or continue to the next chapter
 - output and formatting preferences
 
 Best for:
@@ -71,6 +73,8 @@ LibriScribe resolves models in this order:
 3. provider default from `.env`
 
 That means you can start simple with `.env`, move to one custom project model in Advanced mode, and graduate to per-agent control in Expert mode without changing the overall workflow style.
+
+When full-book automatic writing is enabled, LibriScribe still keeps one summary confirmation before it starts, including a warning that the run may consume many tokens / credits.
 
 ## Typical Flow
 

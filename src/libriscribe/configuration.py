@@ -26,6 +26,11 @@ class OutputFormat(str, Enum):
     PDF = "pdf"
 
 
+class ErrorMode(str, Enum):
+    STOP = "stop"
+    CONTINUE = "continue"
+
+
 class ExpertProjectConfig(BaseModel):
     project_name: str
     title: str = "Untitled"
@@ -73,6 +78,7 @@ class ExpertWorkflowConfig(BaseModel):
     character_generation: StageMode = StageMode.AUTO
     worldbuilding_generation: StageMode = StageMode.AUTO
     chapter_writing: StageMode = StageMode.AUTO
+    chapter_error_mode: ErrorMode = ErrorMode.STOP
     formatting: StageMode = StageMode.AUTO
     output_format: OutputFormat = OutputFormat.MARKDOWN
 

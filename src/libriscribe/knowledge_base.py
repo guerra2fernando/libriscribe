@@ -107,6 +107,8 @@ class ProjectKnowledgeBase(BaseModel):
     llm_provider: str = "openai"
     model: str = ""
     agent_models: Dict[str, str] = {}
+    chapter_writing_mode: str = "prompt"
+    chapter_error_mode: str = "stop"
     dynamic_questions: Dict[str, str] = {}  # Keep for advanced
 
     characters: Dict[str, Character] = {}  # Character name -> Character object

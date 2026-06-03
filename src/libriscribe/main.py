@@ -15,6 +15,7 @@ from rich.panel import Panel
 from libriscribe.agents.project_manager import ProjectManagerAgent
 from libriscribe.configuration import (
     ApprovalMode,
+    ErrorMode,
     OutputFormat,
     StageMode,
     build_project_knowledge_base,
@@ -470,12 +471,75 @@ def generate_worldbuilding_if_needed(
             console.print(f"\n[green]✅ Worldbuilding details generated![/green]")
 
 
+def confirm_full_book_run(
+    project_knowledge_base: ProjectKnowledgeBase,
+    num_chapters: int,
+    error_mode: ErrorMode,
+) -> bool:
+    provider = project_knowledge_base.get("llm_provider", "unknown")
+    model = project_knowledge_base.get("model", "") or get_default_model_for_provider(
+        provider
+    )
+    review_preference = project_knowledge_base.get("review_preference", "AI")
+
+    console.print("")
+    console.print("[bold yellow]⚠️ Full-book automatic writing[/bold yellow]")
+    console.print(
+        f"Provider: [cyan]{provider}[/cyan] | Model: [cyan]{model}[/cyan] | Review: [cyan]{review_preference}[/cyan]"
+    )
+    console.print(
+        f"This will write {num_chapters} chapters without pausing between chapters."
+    )
+    console.print(
+        "[yellow]Warning:[/yellow] this may consume a large number of tokens / credits, especially for longer books."
+    )
+    console.print(
+        f"If a chapter fails, LibriScribe will [bold]{error_mode.value}[/bold]."
+    )
+    return typer.confirm("Continue with full-book automatic writing?")
+
+
+def configure_chapter_writing_flow(
+    project_knowledge_base: ProjectKnowledgeBase, advanced: bool = False
+):
+    """Configures whether chapter writing pauses between chapters and how errors are handled."""
+    review_preference = project_knowledge_base.get("review_preference", "AI")
+    project_knowledge_base.set("chapter_writing_mode", "prompt")
+    project_knowledge_base.set("chapter_error_mode", "stop")
+
+    if review_preference != "AI":
+        console.print("")
+        console.print(
+            "[yellow]Manual chapter review is enabled, so LibriScribe will keep prompting as you move through chapters.[/yellow]"
+        )
+        return
+
+    console.print("")
+    chapter_mode = select_from_list(
+        "📝 How should chapter writing proceed?",
+        ["Pause before each chapter", "Write the whole book automatically"],
+    )
+
+    if chapter_mode == "Write the whole book automatically":
+        project_knowledge_base.set("chapter_writing_mode", "auto")
+        if advanced:
+            console.print("")
+            error_mode = select_from_list(
+                "🚨 If a chapter fails, what should LibriScribe do?",
+                ["Stop on the first error", "Continue to the next chapter"],
+            )
+            project_knowledge_base.set(
+                "chapter_error_mode",
+                "continue" if error_mode == "Continue to the next chapter" else "stop",
+            )
+
+
 def write_and_review_chapters(
     project_knowledge_base: ProjectKnowledgeBase,
-    batch_confirmation: bool = True,
-    chapter_confirmation: bool = True,
+    progression_mode: StageMode = StageMode.PROMPT,
+    error_mode: ErrorMode = ErrorMode.STOP,
 ):
-    """Write and review chapters with better progress tracking and error handling."""
+    """Write and review chapters with configurable progression and error handling."""
     num_chapters = project_knowledge_base.get("num_chapters", 1)
     if isinstance(num_chapters, tuple):
         num_chapters = num_chapters[1]
@@ -484,14 +548,11 @@ def write_and_review_chapters(
         f"\n[bold]Starting chapter writing process. Total chapters: {num_chapters}[/bold]"
     )
 
-    # Determine if using AI review for automatic processing
     using_ai_review = project_knowledge_base.get("review_preference", "") == "AI"
+    auto_progression = progression_mode == StageMode.AUTO
 
-    # If using AI review, ask once if they want to proceed with all chapters
-    if batch_confirmation and using_ai_review and num_chapters > 1:
-        if not typer.confirm(
-            f"\nAI will automatically write and review all {num_chapters} chapters. Proceed?"
-        ):
+    if auto_progression:
+        if not confirm_full_book_run(project_knowledge_base, num_chapters, error_mode):
             return
 
     for i in range(1, num_chapters + 1):
@@ -503,14 +564,21 @@ def write_and_review_chapters(
             chapter = Chapter(
                 chapter_number=i, title=f"Chapter {i}", summary="To be written"
             )
-            project_knowledge_base.add_chapter(chapter)  # Add to knowledge base!
+            project_knowledge_base.add_chapter(chapter)
+
+        if not auto_progression and not typer.confirm(
+            f"\n📝 Ready to write Chapter {i}: {chapter.title}?"
+        ):
+            break
 
         console.print(f"\n[cyan]Writing Chapter {i}: {chapter.title}[/cyan]")
 
         if project_manager.does_chapter_exist(i):
-            # If using AI review, automatically overwrite existing chapters
-            # Otherwise, ask for confirmation
-            if not using_ai_review and not typer.confirm(
+            if auto_progression:
+                console.print(
+                    f"[yellow]Overwriting existing Chapter {i} because automatic full-book writing is enabled.[/yellow]"
+                )
+            elif not using_ai_review and not typer.confirm(
                 f"Chapter {i} already exists. Overwrite?"
             ):
                 console.print(f"[yellow]Skipping chapter {i}...[/yellow]")
@@ -524,13 +592,10 @@ def write_and_review_chapters(
         except Exception as e:
             console.print(f"[red]ERROR writing chapter {i}: {str(e)}[/red]")
             logger.exception(f"Error writing chapter {i}")
-            if not using_ai_review and not typer.confirm("Continue with next chapter?"):
-                break
-
-        # Only ask to continue if NOT using AI review and there are more chapters
-        if i < num_chapters and not using_ai_review and chapter_confirmation:
-            if not typer.confirm("\nContinue to next chapter?"):
-                break
+            if error_mode == ErrorMode.CONTINUE:
+                console.print("[yellow]Continuing to the next chapter...[/yellow]")
+                continue
+            break
 
     console.print("\n[green]Chapter writing process completed![/green]")
 
@@ -592,6 +657,7 @@ def simple_mode():
     get_book_length(project_knowledge_base)
     get_fiction_details(project_knowledge_base)
     get_review_preference(project_knowledge_base)
+    configure_chapter_writing_flow(project_knowledge_base)
     get_description(project_knowledge_base)
 
     project_manager.initialize_project_with_data(project_knowledge_base)
@@ -602,32 +668,14 @@ def simple_mode():
         generate_worldbuilding_if_needed(project_knowledge_base)
 
         project_manager.checkpoint()
-        # Ensure chapters are written
-        num_chapters = project_knowledge_base.get("num_chapters", 1)
-        if isinstance(num_chapters, tuple):
-            num_chapters = num_chapters[1]
 
-        print(f"\nPreparing to write {num_chapters} chapters...")
-
-        # Determine if using AI review for automatic processing
-        using_ai_review = project_knowledge_base.get("review_preference", "") == "AI"
-
-        # If using AI review, ask once if they want to proceed with all chapters
-        if using_ai_review and num_chapters > 1:
-            if typer.confirm(
-                f"AI will automatically write and review all {num_chapters} chapters. Proceed?"
-            ):
-                # Write all chapters automatically
-                for chapter_num in range(1, num_chapters + 1):
-                    project_manager.write_and_review_chapter(chapter_num)
-                    project_manager.checkpoint()
-        else:
-            # User interaction for each chapter
-            for chapter_num in range(1, num_chapters + 1):
-                if not typer.confirm(f"\n📝 Ready to write Chapter {chapter_num}?"):
-                    break
-                project_manager.write_and_review_chapter(chapter_num)
-                project_manager.checkpoint()
+        write_and_review_chapters(
+            project_knowledge_base,
+            progression_mode=StageMode.AUTO
+            if project_knowledge_base.get("chapter_writing_mode", "prompt") == "auto"
+            else StageMode.PROMPT,
+            error_mode=ErrorMode.STOP,
+        )
 
         # Only format after chapters are written
         if typer.confirm("\nDo you want to format the book now?"):
@@ -929,6 +977,7 @@ def advanced_mode():
         get_advanced_research_details(project_knowledge_base)
 
     get_review_preference(project_knowledge_base)
+    configure_chapter_writing_flow(project_knowledge_base, advanced=True)
     get_description(project_knowledge_base)
 
     project_manager.initialize_project_with_data(project_knowledge_base)  # Initialize
@@ -939,7 +988,15 @@ def advanced_mode():
         generate_and_edit_outline(project_knowledge_base)
         generate_characters_if_needed(project_knowledge_base)
         generate_worldbuilding_if_needed(project_knowledge_base)
-        write_and_review_chapters(project_knowledge_base)
+        write_and_review_chapters(
+            project_knowledge_base,
+            progression_mode=StageMode.AUTO
+            if project_knowledge_base.get("chapter_writing_mode", "prompt") == "auto"
+            else StageMode.PROMPT,
+            error_mode=ErrorMode.CONTINUE
+            if project_knowledge_base.get("chapter_error_mode", "stop") == "continue"
+            else ErrorMode.STOP,
+        )
         format_book(project_knowledge_base)
     else:
         print("Exiting.")
@@ -1024,11 +1081,10 @@ def expert_mode(config_path: Optional[str] = None):
             )
 
             if config.workflow.chapter_writing != StageMode.SKIP:
-                auto_write = config.workflow.chapter_writing == StageMode.AUTO
                 write_and_review_chapters(
                     project_knowledge_base,
-                    batch_confirmation=not auto_write,
-                    chapter_confirmation=not auto_write,
+                    progression_mode=config.workflow.chapter_writing,
+                    error_mode=config.workflow.chapter_error_mode,
                 )
 
             format_book(

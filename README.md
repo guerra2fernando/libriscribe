@@ -189,7 +189,8 @@ Expert mode currently supports:
   - outline review
   - character generation
   - worldbuilding generation
-  - chapter writing
+  - chapter writing (`prompt`, `auto`, or `skip`)
+  - chapter error handling (`stop` or `continue`)
   - formatting and output format
 - persisted recent expert settings in `.libriscribe_last_config.json`
 
@@ -221,7 +222,8 @@ workflow:
   outline_review: prompt
   character_generation: auto
   worldbuilding_generation: auto
-  chapter_writing: prompt
+  chapter_writing: auto
+  chapter_error_mode: continue
   formatting: auto
   output_format: markdown
 ```
@@ -232,6 +234,8 @@ Starter files are available in:
 - `examples/expert-config.yaml`
 
 When `project.agent_models` is provided, LibriScribe applies those model IDs only to the named agents and falls back to `project.model`, then to the provider default from `.env`.
+
+If `chapter_writing: auto` is enabled, LibriScribe shows a single summary confirmation before full-book generation begins, including a warning that the run may consume a large number of tokens / credits.
 
 ---
 
