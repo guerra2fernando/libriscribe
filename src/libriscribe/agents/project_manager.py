@@ -2,7 +2,7 @@
 
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Any, cast
 
 import typer  # Import typer
 
@@ -10,6 +10,7 @@ import typer  # Import typer
 from fpdf import FPDF
 from rich.console import Console
 
+from libriscribe.agents.agent_base import Agent
 from libriscribe.agents.chapter_writer import ChapterWriterAgent
 from libriscribe.agents.character_generator import CharacterGeneratorAgent
 from libriscribe.agents.concept_generator import ConceptGeneratorAgent
@@ -27,14 +28,16 @@ from libriscribe.agents.worldbuilding import WorldbuildingAgent
 from libriscribe.knowledge_base import ProjectKnowledgeBase, Worldbuilding
 from libriscribe.settings import Settings
 from libriscribe.utils import prompts_context as prompts
+from libriscribe.utils.editor import open_file_in_editor
 from libriscribe.utils.file_utils import (
-    get_chapter_files,
-    read_json_file,
+    is_nonempty_file,
     read_markdown_file,
-    write_json_file,
     write_markdown_file,
 )
 from libriscribe.utils.llm_client import LLMClient
+from libriscribe.utils.model_routing import parse_fallback_chain_string
+from libriscribe.utils.project_status import update_stage_status
+from libriscribe.workflow_state import inspect_project_progress
 
 console = Console()
 
@@ -44,19 +47,15 @@ logger = logging.getLogger(__name__)
 class ProjectManagerAgent:
     """Manages the book creation process."""
 
-    def __init__(self, llm_client: Optional[LLMClient] = None):
-        self.settings = Settings()
-        self.project_knowledge_base: Optional[ProjectKnowledgeBase] = (
-            None  # Use ProjectKnowledgeBase
-        )
-        self.project_dir: Optional[Path] = None
-        self.llm_client: Optional[LLMClient] = llm_client  # Add LLMClient instance
-        self.agents = {}  # Will be initialized after llm
-        self.logger = logging.getLogger(self.__class__.__name__)  # ADD THIS
+    def __init__(self, llm_client: LLMClient | None = None):
+        self.settings: Settings = Settings()
+        self.project_knowledge_base: ProjectKnowledgeBase | None = None
+        self.project_dir: Path | None = None
+        self.llm_client: LLMClient | None = llm_client
+        self.agents: dict[str, Agent] = {}
+        self.logger: logging.Logger = logging.getLogger(self.__class__.__name__)
 
-    def initialize_llm_client(
-        self, llm_provider: str, model_name: Optional[str] = None
-    ):
+    def initialize_llm_client(self, llm_provider: str, model_name: str | None = None):
         """Initializes the LLMClient and agents."""
         self.llm_client = LLMClient(llm_provider)
         if model_name:
@@ -93,6 +92,89 @@ class ProjectManagerAgent:
             f"✨ Project [green]'{project_data.project_name}'[/green] initialized successfully!"
         )
 
+    def _sync_project_status(self):
+        if not self.project_dir or not self.project_knowledge_base:
+            return
+
+        progress = inspect_project_progress(
+            self.project_dir, self.project_knowledge_base
+        )
+        _ = update_stage_status(
+            self.project_dir,
+            "concept",
+            "complete" if progress.concept_complete else "pending",
+        )
+        _ = update_stage_status(
+            self.project_dir,
+            "outline",
+            "complete" if progress.outline_complete else "pending",
+        )
+        _ = update_stage_status(
+            self.project_dir,
+            "characters",
+            "complete"
+            if progress.characters_complete
+            else ("pending" if progress.characters_required else "skipped"),
+        )
+        _ = update_stage_status(
+            self.project_dir,
+            "worldbuilding",
+            "complete"
+            if progress.worldbuilding_complete
+            else ("pending" if progress.worldbuilding_required else "skipped"),
+        )
+        chapter_status = (
+            "complete"
+            if not progress.missing_chapters and progress.chapter_numbers_complete
+            else ("in_progress" if progress.chapter_numbers_complete else "pending")
+        )
+        _ = update_stage_status(
+            self.project_dir,
+            "chapters",
+            chapter_status,
+            completed_chapters=progress.chapter_numbers_complete,
+            missing_chapters=progress.missing_chapters,
+            total_expected=len(progress.chapter_numbers_complete)
+            + len(progress.missing_chapters),
+        )
+        _ = update_stage_status(
+            self.project_dir,
+            "formatting",
+            "complete" if progress.manuscript_exists else "pending",
+        )
+
+    def _mark_stage_started(self, stage_name: str, **extra: object) -> None:
+        if self.project_dir:
+            _ = update_stage_status(
+                self.project_dir, stage_name, "in_progress", **extra
+            )
+
+    def _mark_stage_failed(self, stage_name: str, message: str = "") -> None:
+        if self.project_dir:
+            _ = update_stage_status(
+                self.project_dir, stage_name, "failed", message=message
+            )
+
+    def _mark_stage_finished(self, stage_name: str) -> None:
+        self._sync_project_status()
+        if not self.project_dir or not self.project_knowledge_base:
+            return
+
+        progress = inspect_project_progress(
+            self.project_dir, self.project_knowledge_base
+        )
+        stage_complete_map = {
+            "concept": progress.concept_complete,
+            "outline": progress.outline_complete,
+            "characters": progress.characters_complete,
+            "worldbuilding": progress.worldbuilding_complete,
+            "chapters": not progress.missing_chapters
+            and bool(progress.chapter_numbers_complete),
+            "formatting": progress.manuscript_exists,
+        }
+        if not stage_complete_map.get(stage_name, False):
+            self._mark_stage_failed(stage_name, "Stage did not complete successfully.")
+
     def save_project_data(self):
         """Saves project data using the ProjectKnowledgeBase object."""
         if self.project_knowledge_base and self.project_dir:
@@ -101,107 +183,87 @@ class ProjectManagerAgent:
                 logger.info("Saving project data...")
 
                 # Clean up worldbuilding fields before saving
-                if hasattr(
-                    self.project_knowledge_base, "clean_worldbuilding_for_category"
-                ):
-                    # If you added the helper function to the class
-                    self.project_knowledge_base.clean_worldbuilding_for_category()
-                else:
-                    # Direct cleanup
-                    if not self.project_knowledge_base.worldbuilding_needed:
-                        self.project_knowledge_base.worldbuilding = None
-                    elif self.project_knowledge_base.worldbuilding:
-                        # Get relevant fields based on category
-                        category = self.project_knowledge_base.category.lower()
-                        if category == "fiction":
-                            fields_to_keep = [
-                                "geography",
-                                "culture_and_society",
-                                "history",
-                                "rules_and_laws",
-                                "technology_level",
-                                "magic_system",
-                                "key_locations",
-                                "important_organizations",
-                                "flora_and_fauna",
-                                "languages",
-                                "religions_and_beliefs",
-                                "economy",
-                                "conflicts",
-                            ]
-                        elif category == "non-fiction":
-                            fields_to_keep = [
-                                "setting_context",
-                                "key_figures",
-                                "major_events",
-                                "underlying_causes",
-                                "consequences",
-                                "relevant_data",
-                                "different_perspectives",
-                                "key_concepts",
-                            ]
-                        elif category == "business":
-                            fields_to_keep = [
-                                "industry_overview",
-                                "target_audience",
-                                "market_analysis",
-                                "business_model",
-                                "marketing_and_sales_strategy",
-                                "operations",
-                                "financial_projections",
-                                "management_team",
-                                "legal_and_regulatory_environment",
-                                "risks_and_challenges",
-                                "opportunities_for_growth",
-                            ]
-                        elif category == "research paper":
-                            fields_to_keep = [
-                                "introduction",
-                                "literature_review",
-                                "methodology",
-                                "results",
-                                "discussion",
-                                "conclusion",
-                                "references",
-                                "appendices",
-                            ]
-                        else:
-                            fields_to_keep = []
+                if not self.project_knowledge_base.worldbuilding_needed:
+                    self.project_knowledge_base.worldbuilding = None
+                elif self.project_knowledge_base.worldbuilding:
+                    category = self.project_knowledge_base.category.lower()
+                    if category == "fiction":
+                        fields_to_keep = [
+                            "geography",
+                            "culture_and_society",
+                            "history",
+                            "rules_and_laws",
+                            "technology_level",
+                            "magic_system",
+                            "key_locations",
+                            "important_organizations",
+                            "flora_and_fauna",
+                            "languages",
+                            "religions_and_beliefs",
+                            "economy",
+                            "conflicts",
+                        ]
+                    elif category == "non-fiction":
+                        fields_to_keep = [
+                            "setting_context",
+                            "key_figures",
+                            "major_events",
+                            "underlying_causes",
+                            "consequences",
+                            "relevant_data",
+                            "different_perspectives",
+                            "key_concepts",
+                        ]
+                    elif category == "business":
+                        fields_to_keep = [
+                            "industry_overview",
+                            "target_audience",
+                            "market_analysis",
+                            "business_model",
+                            "marketing_and_sales_strategy",
+                            "operations",
+                            "financial_projections",
+                            "management_team",
+                            "legal_and_regulatory_environment",
+                            "risks_and_challenges",
+                            "opportunities_for_growth",
+                        ]
+                    elif category == "research paper":
+                        fields_to_keep = [
+                            "introduction",
+                            "literature_review",
+                            "methodology",
+                            "results",
+                            "discussion",
+                            "conclusion",
+                            "references",
+                            "appendices",
+                        ]
+                    else:
+                        fields_to_keep = []
 
-                        # Create clean worldbuilding
-                        if fields_to_keep:
-                            clean_worldbuilding = Worldbuilding()
-                            for field in fields_to_keep:
-                                if hasattr(
-                                    self.project_knowledge_base.worldbuilding, field
-                                ):
-                                    value = getattr(
-                                        self.project_knowledge_base.worldbuilding, field
-                                    )
-                                    if (
-                                        value
-                                        and isinstance(value, str)
-                                        and value.strip()
-                                    ):
-                                        setattr(clean_worldbuilding, field, value)
-
-                            # Replace with clean version
-                            self.project_knowledge_base.worldbuilding = (
-                                clean_worldbuilding
+                    if fields_to_keep:
+                        clean_worldbuilding = Worldbuilding()
+                        for field in fields_to_keep:
+                            value = getattr(
+                                self.project_knowledge_base.worldbuilding, field, None
                             )
+                            if value and isinstance(value, str) and value.strip():
+                                setattr(clean_worldbuilding, field, value)
+
+                        self.project_knowledge_base.worldbuilding = clean_worldbuilding
 
                 file_path = str(self.project_dir / "project_data.json")
                 self.project_knowledge_base.save_to_file(file_path)
 
                 # Verify save
                 if Path(file_path).exists():
-                    # Read back and verify
-                    loaded_data = ProjectKnowledgeBase.load_from_file(file_path)
+                    self._sync_project_status()
                 else:
                     logger.error(f"File not created: {file_path}")
             except Exception as e:
                 logger.exception(f"Error saving project data: {e}")
-                print(f"ERROR: Failed to save project data. See log.")
+                print("ERROR: Failed to save project data. See log.")
         else:
             logger.warning("Attempted to save project data before initialization.")
 
@@ -223,32 +285,56 @@ class ProjectManagerAgent:
                 f"Project data not found for project: {project_name}"
             )
 
-    def _get_model_for_agent(self, agent_name: str) -> Optional[str]:
+    def _get_model_for_agent(self, agent_name: str) -> str | None:
         if not self.project_knowledge_base:
             return self.llm_client.model if self.llm_client else None
 
-        agent_models = self.project_knowledge_base.get("agent_models", {}) or {}
-        project_model = self.project_knowledge_base.get("model", "")
+        agent_models = self.project_knowledge_base.agent_models
+        project_model = self.project_knowledge_base.model
 
         if agent_name in agent_models and agent_models[agent_name].strip():
             return agent_models[agent_name].strip()
-        if project_model and str(project_model).strip():
-            return str(project_model).strip()
+        if project_model and project_model.strip():
+            return project_model.strip()
         if self.llm_client:
             return self.llm_client.default_model
         return None
 
-    def run_agent(self, agent_name: str, *args, **kwargs):
+    def _get_fallback_chain_for_agent(self, agent_name: str) -> list[str] | None:
+        if self.project_knowledge_base:
+            agent_fallback_chains = self.project_knowledge_base.agent_fallback_chains
+            if agent_name in agent_fallback_chains:
+                return [
+                    item.strip()
+                    for item in agent_fallback_chains[agent_name]
+                    if str(item).strip()
+                ]
+
+            project_fallback_chain = self.project_knowledge_base.fallback_chain
+            if project_fallback_chain:
+                return [
+                    item.strip() for item in project_fallback_chain if str(item).strip()
+                ]
+
+        if self.llm_client:
+            return parse_fallback_chain_string(self.llm_client.settings.fallback_chain)
+        return None
+
+    def run_agent(self, agent_name: str, *args: object, **kwargs: object) -> None:
         """Runs a specific agent, passing project_data."""
         if agent_name not in self.agents:
             print(f"ERROR: Agent '{agent_name}' not found.")
             return
 
         agent = self.agents[agent_name]
+        agent_executor = cast(Any, agent)
         if self.llm_client:
             selected_model = self._get_model_for_agent(agent_name)
             if selected_model:
                 self.llm_client.set_model(selected_model)
+            self.llm_client.set_fallback_chain(
+                self._get_fallback_chain_for_agent(agent_name)
+            )
         # Pass project_knowledge_base to agents that need it
         if agent_name in [
             "concept_generator",
@@ -261,7 +347,7 @@ class ProjectManagerAgent:
         ]:
             if self.project_knowledge_base:
                 try:
-                    agent.execute(
+                    agent_executor.execute(
                         project_knowledge_base=self.project_knowledge_base,
                         *args,
                         **kwargs,
@@ -275,7 +361,7 @@ class ProjectManagerAgent:
                 )
         else:  # Other agents
             try:
-                agent.execute(*args, **kwargs)
+                agent_executor.execute(*args, **kwargs)
             except Exception as e:
                 logger.exception(f"Error running agent {agent_name}: {e}")
                 print(f"ERROR: Agent {agent_name} failed. See log for details.")
@@ -287,32 +373,45 @@ class ProjectManagerAgent:
         if self.project_knowledge_base is None:
             print("ERROR: No project initialized.")
             return
+        self._mark_stage_started("concept")
         self.run_agent("concept_generator")  # type: ignore
         self.save_project_data()  # Save after update
+        self._mark_stage_finished("concept")
 
     def generate_outline(self):
         """Generates a book outline."""
+        self._mark_stage_started("outline")
         self.run_agent("outliner")  # type: ignore
         self.save_project_data()  # Save after update
+        self._mark_stage_finished("outline")
 
     def generate_characters(self):
         """Generates character profiles."""
+        self._mark_stage_started("characters")
         self.run_agent("character_generator")  # type: ignore
         self.save_project_data()  # save after update
+        self._mark_stage_finished("characters")
 
     def generate_worldbuilding(self):
         """Generates worldbuilding details."""
+        self._mark_stage_started("worldbuilding")
         self.run_agent("worldbuilding")  # type: ignore
         self.save_project_data()  # save after update
+        self._mark_stage_finished("worldbuilding")
 
     def write_chapter(self, chapter_number: int):
         """Writes a specific chapter."""
+        if not self.project_dir:
+            raise ValueError("Project directory is not initialized.")
+
+        self._mark_stage_started("chapters", current_chapter=chapter_number)
         self.run_agent(
             "chapter_writer",
             chapter_number=chapter_number,
             output_path=str(self.project_dir / f"chapter_{chapter_number}.md"),
         )
         self.save_project_data()
+        self._mark_stage_finished("chapters")
 
     def write_and_review_chapter(self, chapter_number: int):
         """Writes, reviews, and potentially edits a chapter (centralized review logic)."""
@@ -330,11 +429,14 @@ class ProjectManagerAgent:
             self.project_knowledge_base
             and self.project_knowledge_base.review_preference == "Human"
         ):
-            chapter_path = str(self.project_dir / f"chapter_{chapter_number}.md")  # type: ignore
+            if not self.project_dir:
+                print("ERROR: Project directory not initialized.")
+                return
+            chapter_path = str(self.project_dir / f"chapter_{chapter_number}.md")
             console.print(f"\n📄 Chapter {chapter_number} ready for review!")
             if typer.confirm("Do you want to review and edit this chapter now?"):
-                typer.edit(filename=chapter_path)
-                print("\nChanges saved.")
+                open_file_in_editor(chapter_path)
+                print("\nOpened chapter for editing.")
             # Even for human review, we might want style editing
             if typer.confirm("Do you want AI to refine the writing style?"):
                 self.edit_style(chapter_number)
@@ -352,11 +454,19 @@ class ProjectManagerAgent:
             print("ERROR: Project directory not initialized.")
             return
 
+        self._mark_stage_started("formatting", output_path=output_path)
+
         if not self.project_knowledge_base:
+            self._mark_stage_failed("formatting", "Project knowledge base not loaded.")
             print("ERROR: Project knowledge base not loaded.")
             return
 
         try:
+            if not self.llm_client:
+                self._mark_stage_failed("formatting", "LLM client is not initialized.")
+                print("ERROR: LLM client is not initialized.")
+                return
+
             # Get total expected chapters from knowledge base
             total_chapters = self.project_knowledge_base.num_chapters
             if isinstance(total_chapters, tuple):
@@ -390,6 +500,9 @@ class ProjectManagerAgent:
                     f"[yellow]Warning: Missing original chapters: {missing_chapters}[/yellow]"
                 )
                 if not original_content:
+                    self._mark_stage_failed(
+                        "formatting", "No original chapters found to format."
+                    )
                     console.print(
                         "[red]ERROR: No original chapters found to format.[/red]"
                     )
@@ -416,15 +529,15 @@ class ProjectManagerAgent:
             # Save as Markdown or PDF (original version)
             if original_output_path.endswith(".md"):
                 write_markdown_file(original_output_path, formatted_original)
-                console.print(
-                    f"[green]📚 Original version formatted and saved![/green]"
-                )
+                console.print("[green]📚 Original version formatted and saved![/green]")
             elif original_output_path.endswith(".pdf"):
                 self.markdown_to_pdf(formatted_original, original_output_path)
-                console.print(
-                    f"[green]📚 Original version formatted and saved![/green]"
-                )
+                console.print("[green]📚 Original version formatted and saved![/green]")
             else:
+                self._mark_stage_failed(
+                    "formatting",
+                    f"Unsupported output format for original output: {original_output_path}",
+                )
                 console.print(
                     f"[red]ERROR: Unsupported output format: {original_output_path}. Must be .md or .pdf[/red]"
                 )
@@ -445,6 +558,7 @@ class ProjectManagerAgent:
                 console.print(
                     "[yellow]No revised chapters found. Skipping revised version formatting.[/yellow]"
                 )
+                self._mark_stage_finished("formatting")
                 return
 
             # Process revised chapters
@@ -499,19 +613,29 @@ class ProjectManagerAgent:
                     f"[green]Revised version formatted and saved to: {output_path}[/green]"
                 )
             else:
+                self._mark_stage_failed(
+                    "formatting", f"Unsupported output format: {output_path}"
+                )
                 console.print(
                     f"[red]ERROR: Unsupported output format: {output_path}. Must be .md or .pdf[/red]"
                 )
+                return
+
+            self._mark_stage_finished("formatting")
 
         except Exception as e:
+            self._mark_stage_failed("formatting", str(e))
             self.logger.exception(f"Error formatting book: {e}")
             console.print(f"[red]ERROR: Failed to format the book: {str(e)}[/red]")
 
     def research(self, query: str):
         """Performs web research."""
+        if not self.project_dir:
+            print("ERROR: Project directory not initialized.")
+            return
         self.run_agent(
             "researcher", query, str(self.project_dir / "research_results.md")
-        )  # type: ignore
+        )
 
     def edit_style(self, chapter_number: int):
         """Refines writing style."""
@@ -520,28 +644,45 @@ class ProjectManagerAgent:
 
     def check_plagiarism(self, chapter_number: int):
         """Checks for plagiarism."""
-        chapter_path = str(self.project_dir / f"chapter_{chapter_number}.md")  # type: ignore
-        results = self.agents["plagiarism_checker"].execute(chapter_path)  # type: ignore
+        if not self.project_dir:
+            print("ERROR: Project directory not initialized.")
+            return
+        chapter_path = str(self.project_dir / f"chapter_{chapter_number}.md")
+        checker = cast(Any, self.agents["plagiarism_checker"])
+        results = checker.execute(chapter_path)
         print(f"Plagiarism check results for chapter {chapter_number}: {results}")
 
     def check_facts(self, chapter_number: int):
         """Checks factual claims."""
-        chapter_path = str(self.project_dir / f"chapter_{chapter_number}.md")  # type: ignore
-        results = self.agents["fact_checker"].execute(chapter_path)  # type: ignore
+        if not self.project_dir:
+            print("ERROR: Project directory not initialized.")
+            return
+        chapter_path = str(self.project_dir / f"chapter_{chapter_number}.md")
+        checker = cast(Any, self.agents["fact_checker"])
+        results = checker.execute(chapter_path)
         print(f"Fact-check results for chapter {chapter_number}: {results}")
 
     def review_content(self, chapter_number: int):
         """Reviews chapter content."""
-        chapter_path = str(self.project_dir / f"chapter_{chapter_number}.md")  # type: ignore
-        results = self.agents["content_reviewer"].execute(chapter_path)  # type: ignore
-        print(
-            f"Content review results for chapter {chapter_number}:\n{results.get('review', 'No review available.')}"
+        if not self.project_dir:
+            print("ERROR: Project directory not initialized.")
+            return
+        chapter_path = str(self.project_dir / f"chapter_{chapter_number}.md")
+        reviewer = cast(Any, self.agents["content_reviewer"])
+        results = reviewer.execute(chapter_path) or {}
+        review_text = (
+            results.get("review", "No review available.")
+            if isinstance(results, dict)
+            else str(results)
         )
+        print(f"Content review results for chapter {chapter_number}:\n{review_text}")
 
     def does_chapter_exist(self, chapter_number: int) -> bool:
-        """Checks if a chapter file exists."""
-        chapter_path = self.project_dir / f"chapter_{chapter_number}.md"  # type: ignore
-        return chapter_path.exists()
+        """Checks if a chapter file exists and contains content."""
+        if not self.project_dir:
+            return False
+        chapter_path = self.project_dir / f"chapter_{chapter_number}.md"
+        return is_nonempty_file(chapter_path)
 
     def checkpoint(self):
         """Saves the current project state silently."""
@@ -555,9 +696,7 @@ class ProjectManagerAgent:
     ) -> str:  # now accepts ProjectKnowledgeBase
         """Creates a Markdown title page."""
         title = project_knowledge_base.title
-        author = project_knowledge_base.get(
-            "author", "Unknown Author"
-        )  # Assuming you might add author later
+        author = str(project_knowledge_base.get("author", "Unknown Author"))
         genre = project_knowledge_base.genre
         language = project_knowledge_base.language
         title_page = f"# {title}\n\n"

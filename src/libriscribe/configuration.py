@@ -51,6 +51,8 @@ class ExpertProjectConfig(BaseModel):
     llm_provider: str = "openai"
     model: str = ""
     agent_models: Dict[str, str] = Field(default_factory=dict)
+    fallback_chain: list[str] = Field(default_factory=list)
+    agent_fallback_chains: Dict[str, list[str]] = Field(default_factory=dict)
     dynamic_questions: Dict[str, str] = Field(default_factory=dict)
 
     @validator("review_preference", pre=True)
@@ -70,6 +72,40 @@ class ExpertProjectConfig(BaseModel):
         if value is None:
             return "openai"
         return str(value).strip().lower()
+
+    @validator("fallback_chain", pre=True)
+    def normalize_fallback_chain(cls, value: Any) -> list[str]:
+        if value is None:
+            return []
+        if isinstance(value, str):
+            return [item.strip() for item in value.split(",") if item.strip()]
+        if isinstance(value, list):
+            return [str(item).strip() for item in value if str(item).strip()]
+        raise ValueError(
+            "fallback_chain must be a list of strings or a comma-separated string"
+        )
+
+    @validator("agent_fallback_chains", pre=True)
+    def normalize_agent_fallback_chains(cls, value: Any) -> Dict[str, list[str]]:
+        if value is None:
+            return {}
+        if not isinstance(value, dict):
+            raise ValueError(
+                "agent_fallback_chains must be a mapping of agent names to fallback chains"
+            )
+
+        normalized: Dict[str, list[str]] = {}
+        for agent_name, chain in value.items():
+            if isinstance(chain, str):
+                items = [item.strip() for item in chain.split(",") if item.strip()]
+            elif isinstance(chain, list):
+                items = [str(item).strip() for item in chain if str(item).strip()]
+            else:
+                raise ValueError(
+                    f"agent_fallback_chains['{agent_name}'] must be a list of strings or a comma-separated string"
+                )
+            normalized[str(agent_name).strip()] = items
+        return normalized
 
 
 class ExpertWorkflowConfig(BaseModel):

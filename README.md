@@ -122,9 +122,18 @@ MISTRAL_MODEL=mistral-medium-latest
 OPENROUTER_API_KEY=your_openrouter_key_here
 OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
 OPENROUTER_MODEL=anthropic/claude-3-haiku
+
+# Optional global fallback chain
+# Entries may be provider names (use that provider's .env default),
+# provider/model pairs, or model IDs for the current provider.
+FALLBACK_CHAIN=claude,openrouter/anthropic/claude-3-haiku
 ```
 
 LibriScribe reads these model values as provider defaults. In guided setup, Simple mode uses the `.env` default automatically, while Advanced mode lets you either keep the `.env` default or enter one custom model ID for the project.
+
+Advanced mode can also optionally prompt you for a project fallback chain and per-agent fallback chains, giving guided setup parity with Expert mode without requiring a config file.
+
+If `FALLBACK_CHAIN` is set, LibriScribe will try those routes when it hits a recoverable provider/model failure such as a timeout, 429, provider 5xx, empty response, or invalid JSON that could not be repaired.
 
 ### 3. Launch
 
@@ -184,6 +193,8 @@ Expert mode currently supports:
 - reusable starter files in `examples/`
 - project-level model selection with `project.model`
 - optional per-agent model overrides with `project.agent_models`
+- config-driven fallback routing with `project.fallback_chain`
+- optional per-agent fallback routing with `project.agent_fallback_chains`
 - workflow-stage controls for:
   - concept approval
   - outline review
@@ -217,6 +228,13 @@ project:
   agent_models:
     outliner: gpt-4o-mini
     editor: gpt-4o
+  fallback_chain:
+    - claude
+    - openrouter/anthropic/claude-3-haiku
+  agent_fallback_chains:
+    editor:
+      - openai/gpt-4o
+      - claude
 workflow:
   concept_approval: auto
   outline_review: prompt
@@ -235,6 +253,18 @@ Starter files are available in:
 
 When `project.agent_models` is provided, LibriScribe applies those model IDs only to the named agents and falls back to `project.model`, then to the provider default from `.env`.
 
+Fallback entries support three forms:
+
+- `claude` → use that provider's default model from `.env`
+- `openrouter/anthropic/claude-3-haiku` → use an explicit provider/model route
+- `gpt-4o` → use that model on the current project provider
+
+If a fallback chain is configured, LibriScribe will move to the next route for recoverable failures such as timeouts, rate limits, provider 5xx responses, empty responses, or invalid JSON that still fails after repair. Fallback activity is logged so you can see which route ran next.
+
+The `resume` command now inspects the saved project state, skips completed files, preserves existing chapter drafts, and continues from the next incomplete stage instead of assuming chapter-only recovery.
+
+LibriScribe also writes a lightweight `.libriscribe_status.json` file inside each project so interrupted stages are tracked explicitly instead of relying only on file inference.
+
 If `chapter_writing: auto` is enabled, LibriScribe shows a single summary confirmation before full-book generation begins, including a warning that the run may consume a large number of tokens / credits.
 
 ---
@@ -245,13 +275,14 @@ A typical project created by LibriScribe looks like this:
 
 ```
 your_project/
-├── project_data.json    # Project metadata & configurations
-├── outline.md          # Generated chapter-by-chapter outline
-├── characters.json     # Multi-dimensional character profiles
-├── world.json         # Worldbuilding details (category-specific)
-├── chapter_1.md       # Generated and polished chapter drafts
+├── project_data.json          # Project metadata & configurations
+├── .libriscribe_status.json   # Lightweight stage/checkpoint recovery state
+├── outline.md                # Generated chapter-by-chapter outline
+├── characters.json           # Multi-dimensional character profiles
+├── world.json                # Worldbuilding details (category-specific)
+├── chapter_1.md              # Generated and polished chapter drafts
 ├── chapter_2.md
-└── research_results.md # Research findings
+└── research_results.md       # Research findings
 ```
 
 All global execution costs and API calls are written directly to your workspace:

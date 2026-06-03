@@ -22,6 +22,10 @@
       "outliner": "gpt-4o-mini",
       "editor": "gpt-4o"
     },
+    "fallback_chain": ["claude", "openrouter/anthropic/claude-3-haiku"],
+    "agent_fallback_chains": {
+      "editor": ["openai/gpt-4o", "claude"]
+    },
     "dynamic_questions": {
       "q1": "What emotional wound drives the protagonist?",
       "q2": "What makes the empire worth restoring or destroying?"
