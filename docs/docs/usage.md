@@ -4,55 +4,98 @@ sidebar_position: 3
 
 # Usage Guide
 
-This guide explains how to use LibriScribe.
+This guide explains the current LibriScribe CLI workflow and how model selection behaves across setup modes.
 
 ## Running LibriScribe
 
-After installation, simply run:
+Start the interactive setup flow with:
 
 ```bash
 libriscribe start
 ```
 
-This will start the LibriScribe CLI.
+Or jump directly into Expert mode with a config file:
 
-## Simple vs. Advanced Mode
+```bash
+libriscribe start --config examples/expert-config.yaml
+```
 
-LibriScribe offers two modes:
+## Setup Modes
 
-- **Simple Mode**: This mode guides you through a streamlined process with fewer prompts, making it ideal for quickly generating a basic draft. You'll be asked for essential information (genre, description, etc.), and LibriScribe will handle most of the agent interactions automatically.
-- **Advanced Mode**: This mode gives you full control over each step of the book creation process. You'll be able to interact with each agent individually, providing custom parameters and reviewing the output at each stage. This is recommended for users who want fine-grained control and are comfortable working with the CLI.
+LibriScribe now offers three setup modes:
 
-The CLI will ask you to choose a mode at the beginning.
+### 1. Simple Guided Setup
 
-## Step-by-Step (Simple Mode)
+Simple mode is optimized for speed. It asks for the core project information and uses the selected provider's default model from `.env` automatically.
 
-If you choose **Simple Mode**, the CLI will guide you through these steps (with fewer individual commands than Advanced Mode):
+Best for:
+- fast first drafts
+- minimal decision-making
+- users who want provider defaults to do the work
 
-1. **Project Initialization**: You'll provide basic information about your book.
-2. **Concept Generation**: LibriScribe will help refine your initial idea.
-3. **Outline Generation**: An outline will be created automatically.
-4. **Character Generation**: Characters will be created.
-5. **Worldbuilding (if applicable)**: World details will be generated.
-6. **Chapter Writing**: LibriScribe will write all chapters based on the generated outline, characters, and worldbuilding.
-7. **Formatting**: You'll be prompted for an output format (Markdown or PDF).
+### 2. Advanced Guided Setup
 
-## Step-by-Step (Advanced Mode)
+Advanced mode gives you more control over book structure and generation choices while keeping the workflow guided.
 
-Advanced Mode gives you granular control. Here's a breakdown of the commands you'll use (similar to the original README, but initiated through the `libriscribe` command and interactive prompts):
+In addition to the normal project questions, Advanced mode lets you choose whether to:
+- use the selected provider's default model from `.env`
+- or enter one custom model ID for the project
 
-- `create`: Initialize a new project (you will still be prompted for project details).
-- `concept`: Generate a detailed book concept.
-- `outline`: Generate a book outline.
-- `characters`: Generate character profiles.
-- `worldbuilding`: Generate worldbuilding details.
-- `write-chapter`: Write a specific chapter (you'll be prompted for the chapter number).
-- `edit-chapter`: Edit a specific chapter.
-- `style-edit`: Refine the writing style of a chapter.
-- `fact-check`: Check factual claims in a chapter (primarily for non-fiction).
-- `plagiarism-check`: Check for potential plagiarism.
-- `review-chapter`: Review a chapter.
-- `research`: Conduct web research on a topic.
-- `format`: Format the book into Markdown or PDF.
+Best for:
+- users who want one project-wide model override
+- users who still prefer an interactive setup flow
 
-In **Advanced Mode**, you'll run these commands interactively through the main `libriscribe` command, and you'll be prompted for any necessary arguments (like chapter numbers, file paths, etc.).
+### 3. Expert: Configuration File
+
+Expert mode loads a JSON or YAML config file and supports the most control.
+
+Expert mode can define:
+- the provider with `project.llm_provider`
+- a project-wide model with `project.model`
+- per-agent model overrides with `project.agent_models`
+- workflow automation preferences
+- output and formatting preferences
+
+Best for:
+- repeatable runs
+- automation
+- power users
+- different models for different agents
+
+## Model Selection Behavior
+
+LibriScribe resolves models in this order:
+
+1. `project.agent_models[agent_name]` in Expert mode
+2. `project.model` for the project
+3. provider default from `.env`
+
+That means you can start simple with `.env`, move to one custom project model in Advanced mode, and graduate to per-agent control in Expert mode without changing the overall workflow style.
+
+## Typical Flow
+
+A typical full run looks like this:
+
+1. initialize the project
+2. generate/refine the concept
+3. generate the outline
+4. optionally generate characters
+5. optionally generate worldbuilding
+6. write chapters
+7. review/edit chapters
+8. format the manuscript
+
+## Useful CLI Commands After Setup
+
+Once a project is initialized, the CLI also exposes focused commands for later stages:
+
+- `libriscribe outline`
+- `libriscribe characters`
+- `libriscribe worldbuilding`
+- `libriscribe write`
+- `libriscribe edit`
+- `libriscribe format`
+- `libriscribe research`
+- `libriscribe resume`
+
+These commands are useful if you want to continue working on a project after the initial guided setup.

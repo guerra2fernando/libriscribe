@@ -65,18 +65,12 @@ The Chapter Writer requires:
 ## Usage
 
 ```bash
-# Through Project Manager
-libriscribe write-chapter CHAPTER_NUMBER
-
-# Direct usage
-chapter_writer.execute(
-    outline_path,
-    character_path,
-    world_path,
-    chapter_number,
-    output_path
-)
+# Through the CLI
+libriscribe write --chapter-number 1
 ```
+
+The chapter writer is most commonly invoked through the guided setup flow or through the Project Manager.
+Direct agent usage is primarily relevant for contributors working inside the codebase.
 
 ## Best Practices
 

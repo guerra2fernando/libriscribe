@@ -19,36 +19,41 @@ The Project Manager Agent serves as the main interface between the user and Libr
 
 ## Command Interface
 
-The Project Manager provides several key commands:
+The Project Manager is primarily surfaced through the guided CLI flow:
 
 ```bash
-# Create a new project
-libriscribe create PROJECT_NAME --title TITLE --genre GENRE
+libriscribe start
+```
 
-# Generate initial book concept
-libriscribe generate-concept
+After initialization, the main follow-up commands are:
 
-# Create book outline
-libriscribe generate-outline
+```bash
+# Generate book outline
+libriscribe outline
 
 # Generate character profiles
-libriscribe generate-characters
+libriscribe characters
 
 # Create worldbuilding details
-libriscribe generate-worldbuilding
+libriscribe worldbuilding
 
-# Write specific chapters
-libriscribe write-chapter CHAPTER_NUMBER
+# Write a specific chapter
+libriscribe write --chapter-number 1
 
-# Edit chapters
-libriscribe edit-chapter CHAPTER_NUMBER
+# Edit a specific chapter
+libriscribe edit --chapter-number 1
 
-# Format final book
-libriscribe format-book
+# Format the final manuscript
+libriscribe format
 
 # Conduct research
-libriscribe research QUERY
+libriscribe research --query "your topic"
+
+# Resume an existing project
+libriscribe resume --project-name your_project
 ```
+
+Concept generation, chapter review, style editing, and other internal stages are commonly coordinated automatically by the Project Manager during guided setup.
 
 ## File Structure
 

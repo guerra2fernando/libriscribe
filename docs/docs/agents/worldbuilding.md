@@ -77,12 +77,11 @@ The Worldbuilding Agent works closely with:
 ## Usage
 
 ```bash
-# Through Project Manager
-libriscribe generate-worldbuilding
-
-# Direct usage
-worldbuilding.execute(project_data, output_path)
+# Through the CLI
+libriscribe worldbuilding
 ```
+
+Worldbuilding can also be generated automatically during guided setup when the project requires it.
 
 ## Best Practices
 

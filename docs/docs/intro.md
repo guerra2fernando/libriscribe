@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # Introduction to LibriScribe
 
-LibriScribe is an AI-powered book writing assistant designed to streamline the creative process. It uses a multi-agent architecture, with each agent specialized in a particular task. This introduction provides an overview of the project and its capabilities.
+LibriScribe is an AI-powered book writing assistant designed to streamline the creative process. It uses a multi-agent architecture, with each agent specialized in a particular task. It now supports three setup flows: Simple Guided Setup, Advanced Guided Setup, and Expert configuration files for repeatable runs and deeper customization.
 
 ## Core Concepts
 
@@ -34,4 +34,4 @@ See the [Installation Guide](./getting-started) for detailed instructions on set
 
 ## Usage
 
-The [Usage Guide](./usage) provides a step-by-step walkthrough of how to use LibriScribe to write a book.
+The [Usage Guide](./usage) explains the current CLI workflow, including Simple, Advanced, and Expert modes, plus provider defaults, project-level model overrides, and per-agent model selection.

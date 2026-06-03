@@ -59,12 +59,11 @@ This agent serves as the primary editor for your book's content, improving the q
 ## Usage
 
 ```bash
-# Through Project Manager
-libriscribe edit-chapter CHAPTER_NUMBER
-
-# Direct usage
-editor.execute(chapter_path)
+# Through the CLI
+libriscribe edit --chapter-number 1
 ```
+
+The Editor is also triggered automatically by the Project Manager during AI review workflows.
 
 ## Integration
 

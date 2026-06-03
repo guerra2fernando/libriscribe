@@ -56,12 +56,11 @@ The Outliner works closely with:
 ## Usage
 
 ```bash
-# Through Project Manager
-libriscribe generate-outline
-
-# Direct usage
-outliner.execute(project_data, output_path)
+# Through the CLI
+libriscribe outline
 ```
+
+The Outliner is also run automatically during guided setup after concept generation.
 
 ## Best Practices
 

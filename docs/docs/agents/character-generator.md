@@ -71,12 +71,11 @@ The Character Generator works with:
 ## Usage
 
 ```bash
-# Through Project Manager
-libriscribe generate-characters
-
-# Direct usage
-character_generator.execute(project_data, output_path)
+# Through the CLI
+libriscribe characters
 ```
+
+Character generation is usually triggered from guided setup or by the Project Manager during a project workflow.
 
 ## Best Practices
 

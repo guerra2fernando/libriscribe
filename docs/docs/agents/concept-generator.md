@@ -50,13 +50,9 @@ The Concept Generator integrates with:
 
 ## Usage
 
-```bash
-# Through Project Manager
-libriscribe generate-concept
+The Concept Generator is normally invoked by the guided `libriscribe start` workflow rather than through a standalone top-level CLI command.
 
-# Direct API usage
-concept_generator.execute(project_data)
-```
+For contributors working inside the codebase, it is triggered through the Project Manager and agent layer.
 
 ## Error Handling
 

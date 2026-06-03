@@ -67,13 +67,10 @@ This specialized agent focuses on adjusting the writing style to match your desi
 
 ## Usage
 
-```bash
-# Through Project Manager CLI
-libriscribe style-edit CHAPTER_NUMBER
+The Style Editor is typically invoked automatically by the Project Manager during AI-reviewed chapter workflows.
+There is currently no dedicated standalone `libriscribe style-edit` CLI command.
 
-# Direct API usage
-style_editor.execute(chapter_path)
-```
+For contributors working directly in code, it is invoked through the Project Manager or agent layer rather than as a top-level user command.
 
 ## Best Practices
 
