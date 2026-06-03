@@ -1,38 +1,40 @@
 # src/libriscribe/agents/project_manager.py
 
 import logging
-from typing import Optional
 from pathlib import Path
+from typing import Optional
 
-from libriscribe.agents.concept_generator import ConceptGeneratorAgent
-from libriscribe.agents.outliner import OutlinerAgent
-from libriscribe.agents.character_generator import CharacterGeneratorAgent
-from libriscribe.agents.worldbuilding import WorldbuildingAgent
-from libriscribe.agents.chapter_writer import ChapterWriterAgent
-from libriscribe.agents.editor import EditorAgent
-from libriscribe.agents.researcher import ResearcherAgent
-from libriscribe.agents.formatting_optimized import OptimizedFormattingAgent as FormattingAgent
-from libriscribe.agents.content_reviewer import ContentReviewerAgent
-from libriscribe.agents.style_editor import StyleEditorAgent
-from libriscribe.agents.plagiarism_checker import PlagiarismCheckerAgent
-from libriscribe.agents.fact_checker import FactCheckerAgent
-
-from libriscribe.settings import Settings
-from libriscribe.utils.file_utils import (
-    write_json_file,
-    read_json_file,
-    write_markdown_file,
-    get_chapter_files,
-    read_markdown_file,
-)
-from libriscribe.utils import prompts_context as prompts
-from libriscribe.knowledge_base import ProjectKnowledgeBase, Worldbuilding
-from libriscribe.utils.llm_client import LLMClient
+import typer  # Import typer
 
 # For PDF generation
 from fpdf import FPDF
-import typer  # Import typer
 from rich.console import Console
+
+from libriscribe.agents.chapter_writer import ChapterWriterAgent
+from libriscribe.agents.character_generator import CharacterGeneratorAgent
+from libriscribe.agents.concept_generator import ConceptGeneratorAgent
+from libriscribe.agents.content_reviewer import ContentReviewerAgent
+from libriscribe.agents.editor import EditorAgent
+from libriscribe.agents.fact_checker import FactCheckerAgent
+from libriscribe.agents.formatting_optimized import (
+    OptimizedFormattingAgent as FormattingAgent,
+)
+from libriscribe.agents.outliner import OutlinerAgent
+from libriscribe.agents.plagiarism_checker import PlagiarismCheckerAgent
+from libriscribe.agents.researcher import ResearcherAgent
+from libriscribe.agents.style_editor import StyleEditorAgent
+from libriscribe.agents.worldbuilding import WorldbuildingAgent
+from libriscribe.knowledge_base import ProjectKnowledgeBase, Worldbuilding
+from libriscribe.settings import Settings
+from libriscribe.utils import prompts_context as prompts
+from libriscribe.utils.file_utils import (
+    get_chapter_files,
+    read_json_file,
+    read_markdown_file,
+    write_json_file,
+    write_markdown_file,
+)
+from libriscribe.utils.llm_client import LLMClient
 
 console = Console()
 
@@ -42,7 +44,7 @@ logger = logging.getLogger(__name__)
 class ProjectManagerAgent:
     """Manages the book creation process."""
 
-    def __init__(self, llm_client: LLMClient = None):
+    def __init__(self, llm_client: Optional[LLMClient] = None):
         self.settings = Settings()
         self.project_knowledge_base: Optional[ProjectKnowledgeBase] = (
             None  # Use ProjectKnowledgeBase
@@ -206,7 +208,7 @@ class ProjectManagerAgent:
         if project_data_path.exists():
             data = ProjectKnowledgeBase.load_from_file(str(project_data_path))
             if data:
-                self.self.project_knowledge_base = data
+                self.project_knowledge_base = data
                 # CRITICAL: Set project_dir in project_knowledge_base
                 self.project_knowledge_base.project_dir = self.project_dir
             else:
@@ -484,7 +486,9 @@ class ProjectManagerAgent:
 
     def research(self, query: str):
         """Performs web research."""
-        self.run_agent("researcher", query, str(self.project_dir / "research_results.md"))  # type: ignore
+        self.run_agent(
+            "researcher", query, str(self.project_dir / "research_results.md")
+        )  # type: ignore
 
     def edit_style(self, chapter_number: int):
         """Refines writing style."""

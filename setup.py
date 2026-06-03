@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 setup(
     name="libriscribe",
@@ -11,11 +11,16 @@ setup(
         "python-dotenv",
         "pydantic",
         "pydantic-settings",
+        "pyyaml",
         "beautifulsoup4",
         "requests",
         "markdown",
         "fpdf",
         "tenacity",
+        "anthropic",
+        "google-generativeai",
+        "rich",
+        "pick",
     ],
     entry_points={
         "console_scripts": [

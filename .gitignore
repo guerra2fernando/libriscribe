@@ -1,10 +1,13 @@
 node_modules/
 .env
 venv/
+.venv/
 __pycache__/
 src/libriscribe.egg-info/
 src/libriscribe/__pycache__/
 src/libriscribe/utils/__pycache__/
 src/libriscribe/agents/__pycache__/
+build/
 projects/
-libriscribe.logllm_usage.jsonl
+libriscribe.log
+llm_usage.jsonl

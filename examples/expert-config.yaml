@@ -1,0 +1,31 @@
+version: 1
+project:
+  project_name: my_fantasy_novel
+  title: The Last Ember Gate
+  category: Fiction
+  genre: Fantasy
+  language: English
+  description: >-
+    An exiled archivist discovers a buried gate that can resurrect lost
+    empires, but each opening erases part of her identity.
+  num_characters: "3"
+  num_characters_str: "3"
+  worldbuilding_needed: true
+  review_preference: AI
+  book_length: Novel
+  tone: Serious
+  target_audience: Young Adult
+  num_chapters: "10"
+  num_chapters_str: "10"
+  llm_provider: openai
+  dynamic_questions:
+    q1: What emotional wound drives the protagonist?
+    q2: What makes the empire worth restoring or destroying?
+workflow:
+  concept_approval: auto
+  outline_review: prompt
+  character_generation: auto
+  worldbuilding_generation: auto
+  chapter_writing: prompt
+  formatting: auto
+  output_format: markdown

@@ -4,6 +4,7 @@ openai
 python-dotenv
 pydantic
 pydantic-settings
+pyyaml
 beautifulsoup4
 requests
 markdown
@@ -14,4 +15,3 @@ requests
 tenacity
 rich
 pick
-
