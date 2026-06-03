@@ -5,7 +5,6 @@ from libriscribe.agents.agent_base import Agent
 from libriscribe.utils.llm_client import LLMClient
 from libriscribe.utils.prompt_integration import ExternalPromptMixin
 from libriscribe.utils import prompts_context as prompts
-from libriscribe.utils.file_utils import extract_json_from_markdown
 from rich.console import Console
 
 console = Console()

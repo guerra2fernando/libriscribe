@@ -1,7 +1,7 @@
 """External prompt template loader for LibriScribe."""
 import yaml
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
 class PromptLoader:
     """Loads and manages external prompt templates."""

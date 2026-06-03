@@ -1,18 +1,20 @@
 # src/libriscribe/agents/researcher.py
 import logging
+from pathlib import Path
 from typing import Dict, List
 
-from libriscribe.utils.llm_client import LLMClient
-from libriscribe.utils import prompts_context as prompts
-from libriscribe.agents.agent_base import Agent
-from libriscribe.utils.file_utils import write_markdown_file
-from rich.console import Console
-console = Console()
-# Third-party imports for web scraping (requests and BeautifulSoup)
 import requests
 from bs4 import BeautifulSoup
+from rich.console import Console
 
+from libriscribe.agents.agent_base import Agent
+from libriscribe.utils import prompts_context as prompts
+from libriscribe.utils.file_utils import write_markdown_file
+from libriscribe.utils.llm_client import LLMClient
+
+console = Console()
 logger = logging.getLogger(__name__)
+
 
 class ResearcherAgent(Agent):
     """Conducts web research."""
@@ -24,9 +26,28 @@ class ResearcherAgent(Agent):
         """Performs web research and saves the results to a Markdown file."""
 
         try:
+            # Extract project directory from output_path to find project data
+            from libriscribe.knowledge_base import ProjectKnowledgeBase
+            
+            output_file = Path(output_path)
+            project_dir = output_file.parent
+            project_data_path = project_dir / "project_data.json"
+            
+            # Default language in case we can't load the project data
+            language = "English"
+            
+            # Try to load the project knowledge base to get the language
+            if project_data_path.exists():
+                try:
+                    project_kb = ProjectKnowledgeBase.load_from_file(str(project_data_path))
+                    if project_kb and hasattr(project_kb, 'language'):
+                        language = project_kb.language
+                except Exception as e:
+                    self.logger.warning(f"Could not load project data for language detection: {e}")
+
             # Use LLM to generate initial research summary
             console.print(f"🔎 [cyan]Researching: {query}...[/cyan]")
-            prompt = prompts.RESEARCH_PROMPT.format(query=query, language=project_knowledge_base.language)
+            prompt = prompts.RESEARCH_PROMPT.format(query=query, language=language)
             llm_summary = self.llm_client.generate_content(prompt, max_tokens=1000)
 
 

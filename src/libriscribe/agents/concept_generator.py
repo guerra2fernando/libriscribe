@@ -1,5 +1,4 @@
 # src/libriscribe/agents/concept_generator.py
-import json
 import logging
 from typing import Optional
 
@@ -7,8 +6,6 @@ from libriscribe.utils.llm_client import LLMClient
 from libriscribe.agents.agent_base import Agent
 from libriscribe.utils.file_utils import (
     extract_json_from_markdown,
-    read_json_file,
-    write_json_file,
 )
 from libriscribe.knowledge_base import ProjectKnowledgeBase
 
@@ -70,7 +67,7 @@ class ConceptGeneratorAgent(Agent):
                 }}}}}}}}
                 ```"""
 
-            console.print(f"🧠 [cyan]Generating initial concept...[/cyan]")
+            console.print("🧠 [cyan]Generating initial concept...[/cyan]")
             initial_concept_md = self.llm_client.generate_content_with_json_repair(
                 initial_prompt
             )
@@ -97,7 +94,7 @@ class ConceptGeneratorAgent(Agent):
             - **Logline:** Is it concise and does it capture the core conflict?
             - **Description:** Is it well-written, engaging, and does it provide a clear sense of the story?  Are there any obvious weaknesses or areas for improvement? Be specific and constructive.
             """
-            console.print(f"🔍 [cyan]Evaluating concept quality...[/cyan]")
+            console.print("🔍 [cyan]Evaluating concept quality...[/cyan]")
             critique = self.llm_client.generate_content(critique_prompt)
             if not critique:
                 logger.error("Critique generation failed.")
@@ -124,7 +121,7 @@ class ConceptGeneratorAgent(Agent):
             }}}}}}}}
             ```
             """
-            console.print(f"✨ [cyan]Refining concept...[/cyan]")
+            console.print("✨ [cyan]Refining concept...[/cyan]")
             refined_concept_md = self.llm_client.generate_content_with_json_repair(
                 refine_prompt
             )
@@ -151,5 +148,5 @@ class ConceptGeneratorAgent(Agent):
 
         except Exception as e:
             self.logger.exception(f"Error generating concept: {e}")
-            print(f"ERROR: Failed to generate concept. See log for details.")
+            print("ERROR: Failed to generate concept. See log for details.")
             return None

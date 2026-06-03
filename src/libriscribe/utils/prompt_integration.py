@@ -1,5 +1,5 @@
 """Integration layer for external prompt templates."""
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from libriscribe.utils.prompt_loader import PromptLoader
 
 class ExternalPromptMixin:

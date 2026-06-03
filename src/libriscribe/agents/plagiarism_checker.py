@@ -25,24 +25,41 @@ class PlagiarismCheckerAgent(Agent):
             print(f"ERROR: Chapter file is empty or not found: {chapter_path}")
             return []
 
+        # Try to load the project knowledge base to get the language
+        from pathlib import Path
+        from libriscribe.knowledge_base import ProjectKnowledgeBase
+        
+        chapter_file = Path(chapter_path)
+        project_dir = chapter_file.parent
+        project_data_path = project_dir / "project_data.json"
+        
+        language = "English"
+        if project_data_path.exists():
+            try:
+                project_kb = ProjectKnowledgeBase.load_from_file(str(project_data_path))
+                if project_kb and hasattr(project_kb, 'language'):
+                    language = project_kb.language
+            except Exception as e:
+                self.logger.warning(f"Could not load project data for language detection: {e}")
+
         # --- Split into chunks
         chunks = self.split_into_chunks(chapter_content, chunk_size=500) # Smaller chunk size
 
         plagiarism_results = []
         for chunk in chunks:
-            check_result = self.check_plagiarism(chunk)
+            check_result = self.check_plagiarism(chunk, chapter_path, language)
             if check_result:  # Only add if potential plagiarism is found
                 plagiarism_results.extend(check_result)
 
         return plagiarism_results
 
-    def check_plagiarism(self, text_chunk: str) -> List[Dict[str, Any]]:
+    def check_plagiarism(self, text_chunk: str, chapter_path: str, language: str) -> List[Dict[str, Any]]:
         """Checks a text chunk, using extract_json_from_markdown."""
         console.print(f"🔎 [cyan]Checking originality of Chapter {chapter_path.split('_')[-1].split('.')[0]}...[/cyan]")
 
         prompt = f"""
        You are a plagiarism detection expert. Analyze the following text for potential plagiarism.
-       The text is written in {project_knowledge_base.language}.
+       The text is written in {language}.
        
        Do NOT compare it to the entire internet. Instead, focus on identifying common phrases, sentence structures,
        or ideas that might indicate a lack of originality.  If you find something that raises concerns,
@@ -67,7 +84,7 @@ class PlagiarismCheckerAgent(Agent):
 
         except Exception as e:
             self.logger.exception(f"Error during plagiarism check: {e}")
-            print(f"ERROR: Failed to check for plagiarism. See log.")
+            print("ERROR: Failed to check for plagiarism. See log.")
             return []
 
     def split_into_chunks(self, text: str, chunk_size: int) -> List[str]:

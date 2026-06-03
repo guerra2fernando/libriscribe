@@ -24,6 +24,7 @@ class EditorAgent(Agent):
 
     def execute(self, project_knowledge_base: ProjectKnowledgeBase, chapter_number: int) -> None:
         """Edits a chapter and saves the revised version."""
+        chapter_path = f"chapter_{chapter_number}.md"
         try:
             #--- FIX: Construct the path correctly using project_dir ---
             chapter_path = str(Path(project_knowledge_base.project_dir) / f"chapter_{chapter_number}.md")
@@ -93,7 +94,7 @@ class EditorAgent(Agent):
                  #--- FIX: Save as chapter_{chapter_number}_revised.md ---
                 revised_chapter_path = str(Path(project_knowledge_base.project_dir) / f"chapter_{chapter_number}_revised.md")
                 write_markdown_file(revised_chapter_path, revised_chapter)
-                console.print(f"[green]✅ Edited chapter saved![/green]")
+                console.print("[green]✅ Edited chapter saved![/green]")
             else:
                 print("ERROR: Could not extract revised chapter from editor output.")
                 self.logger.error("Could not extract revised chapter content.")
@@ -103,13 +104,13 @@ class EditorAgent(Agent):
 
         except Exception as e:
             self.logger.exception(f"Error editing chapter {chapter_path}: {e}")
-            print(f"ERROR: Failed to edit chapter. See log.")
+            print("ERROR: Failed to edit chapter. See log.")
 
     def extract_chapter_number(self, chapter_path: str) -> int:
         """Extracts chapter number."""
         try:
             return int(chapter_path.split("_")[1].split(".")[0])
-        except:
+        except Exception:
             return -1
 
     def extract_chapter_title(self, chapter_content: str) -> str:

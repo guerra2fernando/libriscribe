@@ -18,7 +18,7 @@ class OptimizedFormattingAgent(Agent):
     def execute(self, project_dir: str, output_path: str) -> None:
         """Format book locally - saves $2+ per book."""
         try:
-            console.print(f"📚 [cyan]Assembling manuscript (cost-optimized)...[/cyan]")
+            console.print("📚 [cyan]Assembling manuscript (cost-optimized)...[/cyan]")
             
             project_data_path = Path(project_dir) / "project_data.json"
             project_knowledge_base = ProjectKnowledgeBase.load_from_file(str(project_data_path))
@@ -29,7 +29,7 @@ class OptimizedFormattingAgent(Agent):
                 write_markdown_file(output_path, formatted_content)
             
             console.print(f"[green]✅ Book formatted and saved to {output_path}[/green]")
-            console.print(f"[green]💰 Saved ~$2.40 in LLM costs vs original formatting[/green]")
+            console.print("[green]💰 Saved ~$2.40 in LLM costs vs original formatting[/green]")
             
         except Exception as e:
             print(f"ERROR: Failed to format book: {e}")

@@ -5,7 +5,7 @@ import os
 import sys
 import warnings
 from importlib.metadata import version as package_version
-from typing import Any, cast
+from typing import cast
 
 import typer
 from pydantic import PydanticDeprecationWarning
@@ -360,7 +360,7 @@ def generate_questions_with_llm(category: str, genre: str) -> dict[str, str]:
     except Exception as e:
         logger.error(f"Error generating questions: {e}")
         console.print(
-            f"[yellow]Error generating custom questions. Using defaults.[/yellow]"
+            "[yellow]Error generating custom questions. Using defaults.[/yellow]"
         )
         return {
             "q1": f"What key themes do you want to explore in your {genre} story?",
@@ -496,7 +496,7 @@ def generate_and_review_concept(
     project_manager.generate_concept()
     project_manager.checkpoint()  # Checkpoint
     console.print("")
-    console.print(f"\n[cyan]✨ Refined Concept:[/cyan]")
+    console.print("\n[cyan]✨ Refined Concept:[/cyan]")
     console.print(f"  [bold]Title:[/bold] {project_knowledge_base.title}")
     console.print(f"  [bold]Logline:[/bold] {project_knowledge_base.logline}")
     console.print(f"  [bold]Description:[/bold]\n{project_knowledge_base.description}")
@@ -514,7 +514,7 @@ def generate_and_edit_outline(
     project_manager.generate_outline()
     project_manager.checkpoint()  # Checkpoint after outline
     console.print("")
-    console.print(f"\n[green]📝 Outline generated![/green]")
+    console.print("\n[green]📝 Outline generated![/green]")
 
     if not project_manager.project_dir:
         return
@@ -542,7 +542,7 @@ def generate_characters_if_needed(
             project_manager.generate_characters()
             project_manager.checkpoint()  # Checkpoint
             console.print("")
-            console.print(f"\n[green]✅ Character profiles generated![/green]")
+            console.print("\n[green]✅ Character profiles generated![/green]")
 
 
 def generate_worldbuilding_if_needed(
@@ -557,7 +557,7 @@ def generate_worldbuilding_if_needed(
             project_manager.generate_worldbuilding()
             project_manager.checkpoint()  # Checkpoint
             console.print("")
-            console.print(f"\n[green]✅ Worldbuilding details generated![/green]")
+            console.print("\n[green]✅ Worldbuilding details generated![/green]")
 
 
 def confirm_full_book_run(
@@ -736,7 +736,7 @@ def format_book(
             output_path = str(project_manager.project_dir / "manuscript.pdf")
         project_manager.format_book(output_path)
         console.print("")
-        console.print(f"\n[green]📘 Book formatted and saved![/green]")
+        console.print("\n[green]📘 Book formatted and saved![/green]")
 
 
 # --- Simple Mode (Refactored) ---

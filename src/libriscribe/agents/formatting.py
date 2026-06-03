@@ -43,7 +43,7 @@ class FormattingAgent(Agent):
 
 
             # Format with LLM
-            console.print(f"📚 [cyan]Assembling final manuscript...[/cyan]")
+            console.print("📚 [cyan]Assembling final manuscript...[/cyan]")
             prompt = prompts.FORMATTING_PROMPT.format(chapters=all_chapters_content,  language=project_knowledge_base.language)
             formatted_markdown = self.llm_client.generate_content(prompt, max_tokens=120000) # May need large token limit
 
@@ -65,7 +65,7 @@ class FormattingAgent(Agent):
 
         except Exception as e:
             self.logger.exception(f"Error formatting book: {e}")
-            print(f"ERROR: Failed to format the book. See log.")
+            print("ERROR: Failed to format the book. See log.")
 
     def create_title_page(self, project_knowledge_base:ProjectKnowledgeBase) -> str: # now accepts ProjectKnowledgeBase
         """Creates a Markdown title page."""

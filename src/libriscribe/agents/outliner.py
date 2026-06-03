@@ -38,7 +38,7 @@ class OutlinerAgent(Agent):
                 initial_prompt = prompts.OUTLINE_PROMPT.format(**project_knowledge_base.model_dump())
                 initial_prompt += f"\n\nIMPORTANT: Generate at most {max_chapters} chapters."
 
-            console.print(f"📝 [cyan]Creating chapter outline...[/cyan]")
+            console.print("📝 [cyan]Creating chapter outline...[/cyan]")
             initial_outline = self.llm_client.generate_content(initial_prompt, max_tokens=3000, temperature=0.5)
             if not initial_outline:
                 logger.error("Initial outline generation failed.")
@@ -58,7 +58,7 @@ class OutlinerAgent(Agent):
             write_markdown_file(output_path, project_knowledge_base.outline)
             
             # --- Step 2: Generate scene outlines for each chapter ---
-            console.print(f"🎬 [cyan]Creating scene/sections breakdowns for each chapter...[/cyan]")
+            console.print("🎬 [cyan]Creating scene/sections breakdowns for each chapter...[/cyan]")
             
             # Loop through all chapters and generate scenes for each
             for chapter_num, chapter in project_knowledge_base.chapters.items():
@@ -90,7 +90,7 @@ class OutlinerAgent(Agent):
 
         except Exception as e:
             self.logger.exception(f"Error generating outline: {e}")
-            print(f"ERROR: Failed to generate outline. See log for details.")
+            print("ERROR: Failed to generate outline. See log for details.")
             
             
     def _get_max_chapters(self, book_length: str) -> int:

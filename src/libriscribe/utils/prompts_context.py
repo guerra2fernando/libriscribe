@@ -1,6 +1,6 @@
 # src/libriscribe/utils/prompts_context.py
 
-from libriscribe.knowledge_base import ProjectKnowledgeBase
+from libriscribe.knowledge_base import ProjectKnowledgeBase, Worldbuilding
 
 
 def get_worldbuilding_aspects(category: str) -> str:

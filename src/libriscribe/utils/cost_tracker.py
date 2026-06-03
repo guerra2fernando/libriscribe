@@ -1,8 +1,6 @@
 """Cost tracking for LLM API usage."""
 import json
-import os
 from datetime import datetime
-from typing import Dict, Optional
 
 class CostTracker:
     """Track LLM usage and costs."""
