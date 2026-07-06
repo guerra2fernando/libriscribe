@@ -192,6 +192,7 @@ class ProjectKnowledgeBase(BaseModel):
     target_audience: str = "General"
     num_chapters: int | tuple[int, int] = 1
     num_chapters_str: str = ""
+    target_word_count: int | None = None  # project-level word-count goal (per-chapter targets live on Chapter)
     llm_provider: str = "openai"
     model: str = ""  # the "Writing" model — prose, brainstorm chat, chapter generation
     utility_model: str = ""  # optional model for structured tasks (lore intake); blank ⇒ use `model`
@@ -236,8 +237,12 @@ class ProjectKnowledgeBase(BaseModel):
                 return int(value)
             except ValueError:
                 return 0
-        if isinstance(value, tuple):
-            return value
+        if isinstance(value, (tuple, list)):
+            # A range round-trips through JSON as a list; normalize back to a 2-tuple.
+            try:
+                return tuple(int(v) for v in value) if len(value) == 2 else int(value[0])
+            except (ValueError, IndexError, TypeError):
+                return 0
         if isinstance(value, int):
             return value
         return 0

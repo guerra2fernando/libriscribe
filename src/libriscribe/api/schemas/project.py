@@ -51,6 +51,7 @@ class ProjectDetail(BaseModel):
     tone: str = "Informative"
     target_audience: str = "General"
     num_chapters: int | tuple[int, int] | str = 1
+    target_word_count: int | None = None
     llm_provider: str = "openai"
     model: str = ""
     utility_model: str = ""

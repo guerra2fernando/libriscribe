@@ -164,6 +164,56 @@ def update_project_settings(name: str, body: UpdateProjectSettings):
     return project_service.get_project_detail(name)
 
 
+def _coerce_chapter_count(value) -> int | tuple[int, int]:
+    """Coerce "12" / "10-14" / "3+" to the KB's int|tuple shape (no validate_assignment on the KB)."""
+    if isinstance(value, int):
+        return value
+    s = str(value).strip()
+    if "-" in s:
+        try:
+            lo, hi = map(int, s.split("-"))
+            return (lo, hi)
+        except ValueError:
+            return 0
+    try:
+        return int(s.replace("+", ""))
+    except ValueError:
+        return 0
+
+
+class UpdateProjectMeta(BaseModel):
+    """Editable primary details of a story. All optional — only provided fields are written.
+    The project's folder name / URL id (`project_name`) is intentionally NOT editable here."""
+    title: str | None = None
+    genre: str | None = None
+    category: str | None = None
+    language: str | None = None
+    description: str | None = None
+    num_chapters: int | str | None = None  # target chapter count
+    target_word_count: int | None = None
+    logline: str | None = None
+    tone: str | None = None
+    target_audience: str | None = None
+    book_length: str | None = None
+
+
+@router.put("/{name}/meta", response_model=ProjectDetail)
+def update_project_meta(name: str, body: UpdateProjectMeta):
+    """Update a project's primary story details (title, genre, targets, creative brief)."""
+    kb = project_service.load_kb(name)
+    if not kb:
+        raise HTTPException(status_code=404, detail="Project not found")
+    for field, value in body.model_dump(exclude_unset=True).items():
+        if value is None:
+            continue
+        if field == "num_chapters":
+            # No validate_assignment on the KB, so coerce "5"/"3-5"/"2+" like the model would.
+            value = _coerce_chapter_count(value)
+        setattr(kb, field, value)
+    project_service.save_kb(name, kb)
+    return project_service.get_project_detail(name)
+
+
 # ─── Retrieval / semantic search (B17) ────────────────────────────────────────
 
 _VALID_RETRIEVAL_MODES = {"disabled", "keyword", "semantic", "hybrid"}

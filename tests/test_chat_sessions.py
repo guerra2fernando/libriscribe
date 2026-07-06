@@ -142,10 +142,25 @@ class BrainstormPrefsTests(unittest.TestCase):
         self.assertEqual(chat._session_meta(chat._new_session("X"))["prefs"], {"verbosity": "medium"})
 
     def test_verbosity_levels_map_to_token_caps(self):
-        self.assertEqual(chat._verbosity({"verbosity": "low"})["max_tokens"], 320)
-        self.assertEqual(chat._verbosity({"verbosity": "high"})["max_tokens"], 1500)
-        self.assertEqual(chat._verbosity(None)["max_tokens"], 700)            # default medium
-        self.assertEqual(chat._verbosity({"verbosity": "bogus"})["max_tokens"], 700)  # unknown -> medium
+        self.assertEqual(chat._verbosity({"verbosity": "low"})["max_tokens"], 512)
+        self.assertEqual(chat._verbosity({"verbosity": "high"})["max_tokens"], 4000)
+        self.assertEqual(chat._verbosity(None)["max_tokens"], 1200)            # default medium
+        self.assertEqual(chat._verbosity({"verbosity": "bogus"})["max_tokens"], 1200)  # unknown -> medium
+
+    def test_max_tokens_override_supersedes_tier_cap(self):
+        # An explicit numeric override wins over the verbosity tier's cap...
+        self.assertEqual(chat._verbosity({"verbosity": "low", "max_tokens": 8000})["max_tokens"], 8000)
+        # ...but keeps the tier's directive.
+        self.assertEqual(
+            chat._verbosity({"verbosity": "low", "max_tokens": 8000})["directive"],
+            chat._VERBOSITY["low"]["directive"],
+        )
+        # Blank / zero / garbage overrides fall back to the tier cap.
+        self.assertEqual(chat._verbosity({"verbosity": "high", "max_tokens": 0})["max_tokens"], 4000)
+        self.assertEqual(chat._verbosity({"verbosity": "high", "max_tokens": None})["max_tokens"], 4000)
+        self.assertEqual(chat._verbosity({"verbosity": "high", "max_tokens": "x"})["max_tokens"], 4000)
+        # Overrides are clamped to a sane ceiling.
+        self.assertEqual(chat._verbosity({"max_tokens": 999999})["max_tokens"], 32000)
 
     def test_prompts_carry_collaborator_and_verbosity_directive(self):
         from types import SimpleNamespace

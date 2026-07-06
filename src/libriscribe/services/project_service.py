@@ -139,6 +139,7 @@ def get_project_detail(project_name: str) -> dict[str, Any] | None:
         "tone": kb.tone,
         "target_audience": kb.target_audience,
         "num_chapters": kb.num_chapters,
+        "target_word_count": kb.target_word_count,
         "llm_provider": kb.llm_provider,
         "model": kb.model,
         "utility_model": kb.utility_model,

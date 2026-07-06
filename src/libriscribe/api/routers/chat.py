@@ -91,14 +91,14 @@ def _default_prefs() -> dict:
 # Each verbosity level = a response directive + an output-length cap.
 _VERBOSITY = {
     "low": {
-        "max_tokens": 320,
+        "max_tokens": 512,
         "directive": (
             "BE ULTRA-CONCISE: 1-2 sentences or 2-3 tight bullets. Just the ideas — no preamble, "
             "no restating the question, no summary."
         ),
     },
     "medium": {
-        "max_tokens": 700,
+        "max_tokens": 1200,
         "directive": (
             "BE CONCISE: a few sentences or a short, scannable list (3-5 bullets max). Lead with the "
             "ideas — no long preamble, no restating, no closing summary. Offer a handful of focused "
@@ -106,7 +106,7 @@ _VERBOSITY = {
         ),
     },
     "high": {
-        "max_tokens": 1500,
+        "max_tokens": 4000,
         "directive": (
             "Be thorough and exploratory: develop each idea with brief reasoning, tradeoffs, and a "
             "concrete example or two. Organize with short headers or bullets when it helps — but "
@@ -117,7 +117,17 @@ _VERBOSITY = {
 
 
 def _verbosity(prefs: dict | None) -> dict:
-    return _VERBOSITY.get((prefs or {}).get("verbosity", "medium"), _VERBOSITY["medium"])
+    prefs = prefs or {}
+    base = _VERBOSITY.get(prefs.get("verbosity", "medium"), _VERBOSITY["medium"])
+    # An explicit numeric `max_tokens` pref overrides the tier's cap (tokens are cheap locally).
+    override = prefs.get("max_tokens")
+    try:
+        override = int(override)
+    except (TypeError, ValueError):
+        override = None
+    if override and override > 0:
+        return {**base, "max_tokens": min(override, 32000)}
+    return base
 
 
 # Baseline "sharp collaborator" contract (B26) — shared by general and focused brainstorm.

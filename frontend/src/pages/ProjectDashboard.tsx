@@ -3,9 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useProject } from '../hooks/useProject'
 import { useWebSocket } from '../hooks/useWebSocket'
 import { useGenerationStore } from '../store/generationSlice'
-import { startGeneration, cancelGeneration, resumeGeneration, listChapters, getCost, updateProjectSettings, fetchProviderModels, getActiveModel, listVersions, saveVersion, restoreVersion, getRetrieval, setRetrieval, getStats } from '../api/client'
+import { startGeneration, cancelGeneration, resumeGeneration, listChapters, getCost, updateProjectSettings, updateProjectMeta, fetchProviderModels, getActiveModel, listVersions, saveVersion, restoreVersion, getRetrieval, setRetrieval, getStats } from '../api/client'
 import ModelPicker from '../components/ModelPicker'
-import { Play, Square, BookOpen, Map, FileText, Download, Save, RefreshCw, Loader2, RotateCcw } from 'lucide-react'
+import { Play, Square, BookOpen, Map, FileText, Download, Save, RefreshCw, Loader2, RotateCcw, Pencil } from 'lucide-react'
 
 const STAGES = ['concept', 'outline', 'characters', 'worldbuilding', 'chapters', 'formatting']
 const PROVIDERS = [
@@ -44,6 +44,53 @@ export default function ProjectDashboard() {
   const [savingRet, setSavingRet] = useState(false)
   const [stats, setStats] = useState<any>(null)
   const [showStats, setShowStats] = useState(false)
+  const [editingMeta, setEditingMeta] = useState(false)
+  const [metaForm, setMetaForm] = useState<any>({})
+  const [savingMeta, setSavingMeta] = useState(false)
+
+  const openMetaEditor = () => {
+    setMetaForm({
+      title: project?.title || '',
+      genre: project?.genre || '',
+      category: project?.category || '',
+      language: project?.language || '',
+      description: project?.description || '',
+      num_chapters: project?.num_chapters ?? '',
+      target_word_count: project?.target_word_count ?? '',
+      logline: project?.logline || '',
+      tone: project?.tone || '',
+      target_audience: project?.target_audience || '',
+      book_length: project?.book_length || '',
+    })
+    setEditingMeta(true)
+  }
+
+  const saveMeta = async () => {
+    if (!name) return
+    setSavingMeta(true)
+    try {
+      const twc = String(metaForm.target_word_count).trim()
+      await updateProjectMeta(name, {
+        title: metaForm.title,
+        genre: metaForm.genre,
+        category: metaForm.category,
+        language: metaForm.language,
+        description: metaForm.description,
+        num_chapters: String(metaForm.num_chapters).trim() || undefined,
+        target_word_count: twc === '' ? null : Number(twc),
+        logline: metaForm.logline,
+        tone: metaForm.tone,
+        target_audience: metaForm.target_audience,
+        book_length: metaForm.book_length,
+      })
+      setEditingMeta(false)
+      refresh()
+    } catch (e: any) {
+      alert('Could not save details: ' + (e?.response?.data?.detail || e?.message || 'unknown error'))
+    } finally {
+      setSavingMeta(false)
+    }
+  }
 
   const refreshVersions = () => { if (name) listVersions(name).then(setVersions).catch(() => {}) }
   useEffect(() => { refreshVersions() }, [name])
@@ -194,10 +241,75 @@ export default function ProjectDashboard() {
           {project.logline && <p className="text-gray-500 text-sm mt-1 italic">{project.logline}</p>}
         </div>
         <div className="flex gap-2 shrink-0">
+          <button onClick={openMetaEditor} className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm flex items-center gap-1" title="Edit story details"><Pencil size={14} /> Edit details</button>
           <button onClick={() => navigate(`/projects/${name}/lorebook`)} className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm flex items-center gap-1"><BookOpen size={14} /> Lorebook</button>
           <button onClick={() => navigate(`/projects/${name}/outline`)} className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm flex items-center gap-1"><Map size={14} /> Outline</button>
         </div>
       </div>
+
+      {/* Edit story details modal */}
+      {editingMeta && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => !savingMeta && setEditingMeta(false)}>
+          <div className="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-5 space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold">Edit story details</h2>
+              <span className="text-xs text-gray-500">id: {project.project_name}</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+              <label className="flex flex-col gap-1 sm:col-span-2">
+                <span className="text-gray-400">Title</span>
+                <input className="bg-gray-800 border border-gray-700 rounded px-2 py-1.5" value={metaForm.title} onChange={e => setMetaForm({ ...metaForm, title: e.target.value })} />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-gray-400">Genre</span>
+                <input className="bg-gray-800 border border-gray-700 rounded px-2 py-1.5" value={metaForm.genre} onChange={e => setMetaForm({ ...metaForm, genre: e.target.value })} />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-gray-400">Category</span>
+                <input className="bg-gray-800 border border-gray-700 rounded px-2 py-1.5" value={metaForm.category} onChange={e => setMetaForm({ ...metaForm, category: e.target.value })} />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-gray-400">Language</span>
+                <input className="bg-gray-800 border border-gray-700 rounded px-2 py-1.5" value={metaForm.language} onChange={e => setMetaForm({ ...metaForm, language: e.target.value })} />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-gray-400">Book length</span>
+                <input className="bg-gray-800 border border-gray-700 rounded px-2 py-1.5" value={metaForm.book_length} onChange={e => setMetaForm({ ...metaForm, book_length: e.target.value })} placeholder="e.g. Novel, Novella" />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-gray-400">Target chapters</span>
+                <input className="bg-gray-800 border border-gray-700 rounded px-2 py-1.5" value={metaForm.num_chapters} onChange={e => setMetaForm({ ...metaForm, num_chapters: e.target.value })} placeholder="e.g. 12 or 10-14" />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-gray-400">Target word count</span>
+                <input type="number" min="0" className="bg-gray-800 border border-gray-700 rounded px-2 py-1.5" value={metaForm.target_word_count} onChange={e => setMetaForm({ ...metaForm, target_word_count: e.target.value })} placeholder="e.g. 80000" />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-gray-400">Tone</span>
+                <input className="bg-gray-800 border border-gray-700 rounded px-2 py-1.5" value={metaForm.tone} onChange={e => setMetaForm({ ...metaForm, tone: e.target.value })} />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-gray-400">Target audience</span>
+                <input className="bg-gray-800 border border-gray-700 rounded px-2 py-1.5" value={metaForm.target_audience} onChange={e => setMetaForm({ ...metaForm, target_audience: e.target.value })} />
+              </label>
+              <label className="flex flex-col gap-1 sm:col-span-2">
+                <span className="text-gray-400">Logline</span>
+                <input className="bg-gray-800 border border-gray-700 rounded px-2 py-1.5" value={metaForm.logline} onChange={e => setMetaForm({ ...metaForm, logline: e.target.value })} placeholder="One-sentence summary" />
+              </label>
+              <label className="flex flex-col gap-1 sm:col-span-2">
+                <span className="text-gray-400">Description</span>
+                <textarea rows={3} className="bg-gray-800 border border-gray-700 rounded px-2 py-1.5 resize-y" value={metaForm.description} onChange={e => setMetaForm({ ...metaForm, description: e.target.value })} />
+              </label>
+            </div>
+            <div className="flex justify-end gap-2 pt-1">
+              <button onClick={() => setEditingMeta(false)} disabled={savingMeta} className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm disabled:opacity-50">Cancel</button>
+              <button onClick={saveMeta} disabled={savingMeta} className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-sm flex items-center gap-1 disabled:opacity-50">
+                {savingMeta ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Pipeline Stages */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">

@@ -16,6 +16,7 @@ export default function BrainstormDrawer({ projectName }: { projectName: string 
   const [applyFor, setApplyFor] = useState<number | null>(null)
   const [useRefs, setUseRefs] = useState(true)
   const [verbosity, setVerbosity] = useState<'low' | 'medium' | 'high'>('medium')
+  const [maxTokens, setMaxTokens] = useState<string>('')
   const [ents, setEnts] = useState<{ character: string[], location: string[], lore: string[], arc: string[] }>({ character: [], location: [], lore: [], arc: [] })
   const [sessions, setSessions] = useState<any[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -53,6 +54,7 @@ export default function BrainstormDrawer({ projectName }: { projectName: string 
       setMessages(s.messages || [])
       setFocus(s.focus || null)
       setVerbosity((s.prefs?.verbosity as any) || 'medium')
+      setMaxTokens(s.prefs?.max_tokens ? String(s.prefs.max_tokens) : '')
       setApplyFor(null)
     }).catch(() => {})
   }, [activeId, open, projectName])
@@ -72,7 +74,7 @@ export default function BrainstormDrawer({ projectName }: { projectName: string 
           copy[copy.length - 1] = { role: 'assistant', content: copy[copy.length - 1].content + tok }
           return copy
         })
-      }, focus, useRefs, activeId, { verbosity })
+      }, focus, useRefs, activeId, { verbosity, max_tokens: maxTokens ? Number(maxTokens) : undefined })
     } catch (e: any) {
       setMessages(m => {
         const copy = m.slice()
@@ -88,6 +90,11 @@ export default function BrainstormDrawer({ projectName }: { projectName: string 
   const changeVerbosity = (v: 'low' | 'medium' | 'high') => {
     setVerbosity(v)
     if (activeId) updateSession(projectName, activeId, { prefs: { verbosity: v } }).catch(() => {})
+  }
+
+  const commitMaxTokens = () => {
+    const n = maxTokens.trim() ? Number(maxTokens) : null
+    if (activeId) updateSession(projectName, activeId, { prefs: { max_tokens: n && n > 0 ? n : null } }).catch(() => {})
   }
 
   const clear = async () => {
@@ -194,6 +201,12 @@ export default function BrainstormDrawer({ projectName }: { projectName: string 
                 <option value="medium">Medium — balanced</option>
                 <option value="high">High — detailed</option>
               </select>
+            </label>
+            <label className="text-xs text-gray-500 flex items-center gap-2 mt-2" title="Max tokens per response. Overrides the verbosity cap when set — raise it if replies get cut off (local models: tokens are free).">
+              Response length
+              <input type="number" min="0" step="256" value={maxTokens} onChange={e => setMaxTokens(e.target.value)} onBlur={commitMaxTokens}
+                placeholder="auto" className="w-24 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs" />
+              <span className="text-[10px] text-gray-600">tokens (blank = verbosity default)</span>
             </label>
             <div className="flex items-center justify-between mt-2">
               <label className="flex items-center gap-1.5 text-[11px] text-gray-400" title="Include imported reference material (Lorebook → References) as background source">
