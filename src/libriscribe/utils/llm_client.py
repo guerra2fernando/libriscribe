@@ -7,6 +7,7 @@ import requests
 try:
     from google import genai  # type: ignore[attr-defined]
     from google.genai import types as google_genai_types  # type: ignore[attr-defined]
+    logging.getLogger("google.genai").setLevel(logging.WARNING)
 except ImportError:  # pragma: no cover
     genai = None  # type: ignore[assignment]
     google_genai_types = None  # type: ignore[assignment]
