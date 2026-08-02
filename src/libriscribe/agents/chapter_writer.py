@@ -200,6 +200,8 @@ class ChapterWriterAgent(Agent):
             genre=project_knowledge_base.genre,
             category=project_knowledge_base.category,
             language=project_knowledge_base.language,
+            tone=project_knowledge_base.tone,
+            target_audience=project_knowledge_base.target_audience,
             chapter_summary=chapter.summary,
             scene_number=scene.scene_number,
             scene_summary=scene.summary,

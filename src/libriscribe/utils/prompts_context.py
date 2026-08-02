@@ -194,6 +194,9 @@ IMPORTANT: The content should be written entirely in {language}.
 OUTLINE_PROMPT = """
 Create a structured outline for a {genre} book titled "{title}" which is categorized as {category}.
 The book is written in {language}.
+Tone: {tone}
+Target audience: {target_audience}
+Logline: {logline}
 
 Description: {description}
 
@@ -382,6 +385,8 @@ Output: Return the complete book manuscript in Markdown format.
 SCENE_PROMPT = """
 Write Scene {scene_number} of {total_scenes} for Chapter {chapter_number}: {chapter_title} of the {genre} {category} book "{book_title}".
 The book is written in {language}.
+Tone: {tone}
+Target audience: {target_audience}
 
 Chapter Summary:
 {chapter_summary}
