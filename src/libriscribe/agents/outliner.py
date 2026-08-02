@@ -13,6 +13,19 @@ from libriscribe.knowledge_base import ProjectKnowledgeBase, Chapter, Scene
 from rich.console import Console
 
 console = Console()
+
+_ADVANCED_FIELDS: list[tuple[str, str]] = [
+    ("inspired_by", "Inspired by"),
+    ("author_experience", "Author experience"),
+    ("key_takeaways", "Key takeaways"),
+    ("case_studies", "Includes case studies"),
+    ("actionable_advice", "Includes actionable advice"),
+    ("marketing_focus", "Marketing focus"),
+    ("sales_focus", "Sales focus"),
+    ("research_question", "Research question"),
+    ("hypothesis", "Hypothesis"),
+    ("methodology", "Methodology"),
+]
 logger = logging.getLogger(__name__)
 
 
@@ -39,33 +52,12 @@ class OutlinerAgent(Agent):
                 initial_prompt = prompts.OUTLINE_PROMPT.format(**project_knowledge_base.model_dump())
                 initial_prompt += f"\n\nIMPORTANT: Generate at most {max_chapters} chapters."
 
-            # Task 10: Append user's chapter count preference to prompt
-            num_ch = project_knowledge_base.num_chapters
+            # Task 10: Append user's chapter count preference to prompt (only when explicitly set)
             num_ch_str = project_knowledge_base.get("num_chapters_str", "")
             if num_ch_str and str(num_ch_str) not in ("0", ""):
-                ch_hint = f"\nAuthor's preferred chapter count: {num_ch_str}."
-            elif isinstance(num_ch, int) and num_ch > 0:
-                ch_hint = f"\nAuthor's preferred chapter count: {num_ch}."
-            elif isinstance(num_ch, tuple) and len(num_ch) == 2:
-                ch_hint = f"\nAuthor's preferred chapter count: {num_ch[0]}-{num_ch[1]}."
-            else:
-                ch_hint = ""
-            if ch_hint:
-                initial_prompt += ch_hint
+                initial_prompt += f"\nAuthor's preferred chapter count: {num_ch_str}."
 
             # Task 3: Append advanced-mode author notes to prompt
-            _ADVANCED_FIELDS = [
-                ("inspired_by", "Inspired by"),
-                ("author_experience", "Author experience"),
-                ("key_takeaways", "Key takeaways"),
-                ("case_studies", "Includes case studies"),
-                ("actionable_advice", "Includes actionable advice"),
-                ("marketing_focus", "Marketing focus"),
-                ("sales_focus", "Sales focus"),
-                ("research_question", "Research question"),
-                ("hypothesis", "Hypothesis"),
-                ("methodology", "Methodology"),
-            ]
             notes = []
             for field, label in _ADVANCED_FIELDS:
                 val = project_knowledge_base.get(field)
@@ -136,6 +128,12 @@ class OutlinerAgent(Agent):
             length_max = 8
         else:
             length_max = 20
+
+        # Only honor num_chapters when the user explicitly set it (num_chapters_str is the explicit signal).
+        # The PKB default num_chapters=1 must not be treated as a user preference.
+        num_ch_str = pkb.get("num_chapters_str", "")
+        if not num_ch_str or str(num_ch_str) in ("0", ""):
+            return length_max
 
         num_ch = pkb.num_chapters
         if isinstance(num_ch, tuple) and len(num_ch) == 2:
@@ -212,18 +210,6 @@ class OutlinerAgent(Agent):
             """
 
             # Task 3: Append advanced-mode author notes to scene prompt
-            _ADVANCED_FIELDS = [
-                ("inspired_by", "Inspired by"),
-                ("author_experience", "Author experience"),
-                ("key_takeaways", "Key takeaways"),
-                ("case_studies", "Includes case studies"),
-                ("actionable_advice", "Includes actionable advice"),
-                ("marketing_focus", "Marketing focus"),
-                ("sales_focus", "Sales focus"),
-                ("research_question", "Research question"),
-                ("hypothesis", "Hypothesis"),
-                ("methodology", "Methodology"),
-            ]
             notes = []
             for field, label in _ADVANCED_FIELDS:
                 val = project_knowledge_base.get(field)
@@ -411,17 +397,7 @@ class OutlinerAgent(Agent):
                     continue
 
             elif "Book Summary" in line and chapter_count == 0:
-                book_summary_lines: list[str] = []
-                j = i + 1
-                while j < len(lines) and not (
-                    lines[j].strip().startswith("Chapter") or "Chapter List" in lines[j]
-                ):
-                    if lines[j].strip():
-                        book_summary_lines.append(lines[j].strip())
-                    j += 1
-
-                if book_summary_lines:
-                    pass
+                pass  # Book summary is stored in outline field; user description is preserved
 
             elif current_chapter and ("Summary" in line or line.startswith("Summary")):
                 current_section = "summary"

@@ -12,7 +12,7 @@ from libriscribe.agents.agent_base import Agent
 from libriscribe.knowledge_base import Chapter, ProjectKnowledgeBase, Scene
 from libriscribe.narrative.graph_builder import NarrativeGraphBuilder
 from libriscribe.narrative.invariant_checker import InvariantChecker
-from libriscribe.narrative.models import NarrativeGraph
+from libriscribe.narrative.models import NarrativeFact, NarrativeGraph
 from libriscribe.utils import prompts_context as prompts
 from libriscribe.utils.file_utils import write_markdown_file
 from libriscribe.utils.llm_client import LLMClient
@@ -77,8 +77,7 @@ class ChapterWriterAgent(Agent):
             # Load narrative graph for InvariantChecker
             narrative_graph = self._load_narrative_graph(project_dir, project_knowledge_base.project_name)
             # Seed Ch1 graph with character facts so InvariantChecker has context from the start
-            if not narrative_graph.facts and project_knowledge_base.characters:
-                from libriscribe.narrative.models import NarrativeFact
+            if chapter_number == 1 and not narrative_graph.facts and project_knowledge_base.characters:
                 for char in project_knowledge_base.characters.values():
                     fact_id = NarrativeFact.make_id(char.name, "has_traits", char.personality_traits or "")
                     narrative_graph.facts.append(NarrativeFact(
@@ -239,7 +238,7 @@ class ChapterWriterAgent(Agent):
             char = project_knowledge_base.get_character(name)
             if char:
                 char_profiles.append(
-                    f"- {char.name} ({char.role}): {char.personality_traits}. "
+                    f"- {char.name} ({char.role or 'unknown role'}): {char.personality_traits}. "
                     f"Background: {char.background[:120] if char.background else 'N/A'}. "
                     f"Arc: {char.character_arc[:80] if char.character_arc else 'N/A'}."
                 )
@@ -258,7 +257,8 @@ class ChapterWriterAgent(Agent):
                 if val and isinstance(val, str) and val.strip():
                     label = attr.replace("_", " ").title()
                     snippet = val[:200].rstrip()
-                    wb_parts.append(f"  {label}: {snippet}...")
+                    ellipsis = "..." if len(val) > 200 else ""
+                    wb_parts.append(f"  {label}: {snippet}{ellipsis}")
             if wb_parts:
                 worldbuilding_block = "WORLD CONTEXT (maintain consistency):\n" + "\n".join(wb_parts)
 
