@@ -4,18 +4,20 @@ import json
 import math
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any
+
 from libriscribe.retrieval.models import RetrievalChunk, SearchResult
 
 # Optional rank-bm25 import
 try:
-    from rank_bm25 import BM25Okapi
+    from rank_bm25 import BM25Okapi as _BM25Okapi  # type: ignore[import-untyped]
     HAS_RANK_BM25 = True
 except ImportError:
+    _BM25Okapi = None  # type: ignore[assignment, misc]
     HAS_RANK_BM25 = False
 
 
-def tokenize(text: str) -> List[str]:
+def tokenize(text: str) -> list[str]:
     """Simple alphanumeric tokenizer that lowercases terms."""
     return re.findall(r"\b\w+\b", text.lower())
 
@@ -23,14 +25,14 @@ def tokenize(text: str) -> List[str]:
 class FallbackTFIDFIndex:
     """A pure-Python TF-IDF ranker fallback when rank-bm25 is unavailable."""
 
-    def __init__(self):
-        self.doc_term_freqs: List[Dict[str, int]] = []
-        self.doc_lengths: List[int] = []
-        self.doc_ids: List[str] = []
-        self.df: Dict[str, int] = {}
+    def __init__(self) -> None:
+        self.doc_term_freqs: list[dict[str, int]] = []
+        self.doc_lengths: list[int] = []
+        self.doc_ids: list[str] = []
+        self.df: dict[str, int] = {}
         self.num_docs = 0
 
-    def fit(self, corpus: List[Tuple[str, str]]):
+    def fit(self, corpus: list[tuple[str, str]]) -> None:
         """Fits TF-IDF weights on a corpus of (doc_id, text) tuples."""
         self.doc_term_freqs = []
         self.doc_lengths = []
@@ -43,16 +45,15 @@ class FallbackTFIDFIndex:
             self.doc_ids.append(doc_id)
             self.doc_lengths.append(len(tokens))
 
-            tf: Dict[str, int] = {}
+            tf: dict[str, int] = {}
             for token in tokens:
                 tf[token] = tf.get(token, 0) + 1
             self.doc_term_freqs.append(tf)
 
-            # Update document frequency (DF)
             for token in tf:
                 self.df[token] = self.df.get(token, 0) + 1
 
-    def score(self, query_tokens: List[str]) -> List[float]:
+    def score(self, query_tokens: list[str]) -> list[float]:
         """Scores each document against a list of query tokens."""
         scores = [0.0] * self.num_docs
         if self.num_docs == 0 or not query_tokens:
@@ -62,13 +63,11 @@ class FallbackTFIDFIndex:
             if token not in self.df:
                 continue
 
-            # Compute IDF: ln(1 + num_docs / doc_frequency)
             idf = math.log(1.0 + (self.num_docs / self.df[token]))
 
             for i in range(self.num_docs):
                 tf = self.doc_term_freqs[i].get(token, 0)
                 if tf > 0:
-                    # Simple sub-linear TF scaling: 1 + ln(tf)
                     tf_scaled = 1.0 + math.log(tf)
                     scores[i] += tf_scaled * idf
 
@@ -78,16 +77,16 @@ class FallbackTFIDFIndex:
 class KeywordIndex:
     """Keyword search engine with optional BM25 and fallback TF-IDF."""
 
-    def __init__(self, projects_dir: Path):
+    def __init__(self, projects_dir: Path) -> None:
         self.projects_dir = projects_dir
-        self.chunks_map: Dict[str, RetrievalChunk] = {}
-        self.corpus: List[Tuple[str, str]] = []  # List of (chunk_id, searchable_text)
+        self.chunks_map: dict[str, RetrievalChunk] = {}
+        self.corpus: list[tuple[str, str]] = []  # list of (chunk_id, searchable_text)
         self.bm25_ranker: Any = None
         self.fallback_ranker: FallbackTFIDFIndex | None = None
 
-    def build(self, chunks: List[RetrievalChunk]) -> None:
+    def build(self, chunks: list[RetrievalChunk]) -> None:
         """Builds the index from a list of chunks."""
-        self.chunks_map = {c.chunk_id: c for chunk in chunks for c in [chunk]}
+        self.chunks_map = {chunk.chunk_id: chunk for chunk in chunks}
         self.corpus = []
 
         for chunk in chunks:
@@ -105,10 +104,10 @@ class KeywordIndex:
             searchable_text = chunk.text + " " + " ".join(metadata_keywords)
             self.corpus.append((chunk.chunk_id, searchable_text))
 
-        if HAS_RANK_BM25:
+        if HAS_RANK_BM25 and _BM25Okapi is not None:
             tokenized_corpus = [tokenize(text) for _, text in self.corpus]
             if tokenized_corpus:
-                self.bm25_ranker = BM25Okapi(tokenized_corpus)
+                self.bm25_ranker = _BM25Okapi(tokenized_corpus)
             else:
                 self.bm25_ranker = None
             self.fallback_ranker = None
@@ -121,8 +120,8 @@ class KeywordIndex:
         self,
         query: str,
         top_k: int = 6,
-        filters: Dict[str, Any] | None = None,
-    ) -> List[SearchResult]:
+        filters: dict[str, Any] | None = None,
+    ) -> list[SearchResult]:
         """Searches the keyword index and returns top-k results matching filters."""
         if not self.corpus:
             return []

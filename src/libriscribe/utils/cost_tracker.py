@@ -32,7 +32,7 @@ class CostTracker:
             "cost": cost
         }
         
-        with open(self.log_file, "a") as f:
+        with open(self.log_file, "a", encoding="utf-8") as f:
             f.write(json.dumps(entry) + "\n")
     
     def calculate_cost(self, model: str, input_tokens: int, output_tokens: int) -> float:

@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import Dict, List, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from libriscribe.knowledge_base import ProjectKnowledgeBase
@@ -50,7 +50,7 @@ class IndexManager:
         docs = builder.build_all()
 
         # 2. Chunk documents
-        chunks: List[RetrievalChunk] = []
+        chunks: list[RetrievalChunk] = []
         for doc in docs:
             doc_chunks = chunk_document(
                 doc,
@@ -118,7 +118,7 @@ class IndexManager:
         self.keyword_index.load_from_file(self.keyword_index_file)
         self.xref_index.load_from_file(self.xref_index_file)
 
-    def _get_entity_definitions(self) -> Dict[str, str]:
+    def _get_entity_definitions(self) -> dict[str, str]:
         """Assembles the dictionary of entity names and types from characters and worldbuilding."""
         defs = {}
         # Characters
@@ -134,13 +134,13 @@ class IndexManager:
 
         return defs
 
-    def _write_jsonl(self, file_path: Path, items: List[dict]) -> None:
+    def _write_jsonl(self, file_path: Path, items: list[dict]) -> None:
         """Helper to write a list of dictionaries to a JSONL file."""
         with open(file_path, "w", encoding="utf-8") as f:
             for item in items:
                 f.write(json.dumps(item) + "\n")
 
-    def _write_manifest(self, docs: List[RetrievalDocument]) -> None:
+    def _write_manifest(self, docs: list[RetrievalDocument]) -> None:
         """Helper to save the indexing state manifest."""
         manifest = {
             "project_name": self.kb.project_name,

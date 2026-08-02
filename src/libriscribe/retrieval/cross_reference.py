@@ -3,17 +3,17 @@
 import json
 import re
 from pathlib import Path
-from typing import Dict, List
+
 from libriscribe.retrieval.models import RetrievalChunk, CrossReferenceEntry
 
 
 class CrossReferenceIndex:
     """Builds and queries the local entity relationship (cross-reference) JSON index."""
 
-    def __init__(self):
-        self.entities: Dict[str, CrossReferenceEntry] = {}
+    def __init__(self) -> None:
+        self.entities: dict[str, CrossReferenceEntry] = {}
 
-    def build(self, chunks: List[RetrievalChunk], entity_definitions: Dict[str, str]) -> None:
+    def build(self, chunks: list[RetrievalChunk], entity_definitions: dict[str, str]) -> None:
         """Builds cross-references by scanning chunk texts for defined entities.
 
         entity_definitions maps entity_name -> entity_type (e.g., {"Mira Thorn": "character"}).

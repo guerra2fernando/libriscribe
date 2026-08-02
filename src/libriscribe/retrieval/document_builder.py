@@ -10,8 +10,12 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from libriscribe.knowledge_base import ProjectKnowledgeBase
 
+import logging
+
 from libriscribe.retrieval.models import RetrievalDocument
 from libriscribe.retrieval.metadata import extract_characters, extract_locations, extract_tags_and_themes
+
+logger = logging.getLogger(__name__)
 
 
 def compute_sha256(text: str) -> str:
@@ -251,6 +255,7 @@ class DocumentBuilder:
                 try:
                     text = path.read_text(encoding="utf-8")
                 except Exception:
+                    logger.warning("Failed to read chapter prose file %s, skipping.", path, exc_info=True)
                     continue
 
                 if text.strip():

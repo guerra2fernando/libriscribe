@@ -1,7 +1,7 @@
 # src/libriscribe/agents/concept_generator.py
 import json
 import logging
-from typing import Optional
+from typing import Any, Optional
 
 from libriscribe.utils.llm_client import LLMClient
 from libriscribe.agents.agent_base import Agent
@@ -10,10 +10,9 @@ from libriscribe.utils.file_utils import (
 )
 from libriscribe.knowledge_base import ProjectKnowledgeBase
 
-# No need to import track
-from rich.console import Console  # NEW IMPORT
+from rich.console import Console
 
-console = Console()  # Create a console instance.
+console = Console()
 logger = logging.getLogger(__name__)
 
 
@@ -26,11 +25,15 @@ class ConceptGeneratorAgent(Agent):
     def execute(
         self,
         project_knowledge_base: ProjectKnowledgeBase,
-        output_path: Optional[str] = None,
-    ) -> None:
-        """Generates a book concept, with critique and refinement."""
+        output_path: Optional[str] = None,  # noqa: ARG002
+    ) -> dict[str, Any] | None:
+        """Generates a book concept with critique and refinement.
+
+        Returns the refined concept dict on success, None on failure.
+        Mutates project_knowledge_base title/logline/description in place.
+        """
         try:
-            # --- Step 1: Initial Concept Generation (Simplified) ---
+            # --- Step 1: Initial Concept Generation ---
             if project_knowledge_base.book_length == "Short Story":
                 initial_prompt = f"""Generate a concise book concept for a {project_knowledge_base.genre} {project_knowledge_base.category} short story.
                     The book should be written in {project_knowledge_base.language}.
@@ -133,7 +136,7 @@ class ConceptGeneratorAgent(Agent):
 
             refined_concept_json = extract_json_from_markdown(refined_concept_md)
             if not refined_concept_json:
-                logger.error("Refined concept parsing failed")
+                logger.error("Refined concept parsing failed.")
                 return None
 
             # --- Step 4: Update ProjectData (using refined concept) ---
@@ -145,10 +148,13 @@ class ConceptGeneratorAgent(Agent):
                 project_knowledge_base.description = refined_concept_json["description"]
 
             logger.info(
-                f"Concept generated (refined): Title: {project_knowledge_base.title}, Logline: {project_knowledge_base.logline}"
+                "Concept generated (refined): Title: %s, Logline: %s",
+                project_knowledge_base.title,
+                project_knowledge_base.logline,
             )
+            return refined_concept_json
 
-        except Exception as e:
-            self.logger.exception(f"Error generating concept: {e}")
-            print("ERROR: Failed to generate concept. See log for details.")
+        except Exception:
+            self.logger.exception("Error generating concept")
+            console.print("[red]ERROR:[/red] Failed to generate concept. See log for details.")
             return None

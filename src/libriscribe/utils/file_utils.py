@@ -4,11 +4,9 @@ import json
 import logging
 import re
 from pathlib import Path
-from typing import Any, Dict, Optional, Type, TypeVar, Union
+from typing import Any, Optional, Type, TypeVar, Union
 
-from pydantic import BaseModel, ValidationError  # Import ValidationError
-
-from libriscribe.knowledge_base import ProjectKnowledgeBase
+from pydantic import BaseModel, ValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -18,37 +16,31 @@ T = TypeVar("T", bound=BaseModel)
 
 def read_json_file(
     file_path: str, model: Optional[Type[T]] = None
-) -> Union[Dict[str, Any], T, None]:
+) -> Union[dict[str, Any], T, None]:
     """Reads a JSON file, optionally validating it against a Pydantic model."""
     try:
         with open(file_path, "r", encoding="utf-8") as f:
             data = json.load(f)
             if model:
                 try:
-                    return model.model_validate(data)  # Use model_validate
+                    return model.model_validate(data)
                 except ValidationError as e:
-                    logger.error(f"JSON validation error in {file_path}: {e}")
-                    print(
-                        f"ERROR: Invalid JSON data in {file_path}. See log for details."
-                    )
-                    return None  # Or raise, or return a default instance of the model
+                    logger.error("JSON validation error in %s: %s", file_path, e)
+                    return None
             return data
     except FileNotFoundError:
-        logger.error(f"File not found: {file_path}")
-        print(f"ERROR: File not found: {file_path}")
+        logger.error("File not found: %s", file_path)
         return None
     except json.JSONDecodeError:
-        logger.exception(f"Invalid JSON in {file_path}")
-        print(f"ERROR: Invalid JSON in {file_path}")
+        logger.exception("Invalid JSON in %s", file_path)
         return None
-    except Exception as e:
-        logger.exception(f"Error reading JSON file {file_path}: {e}")
-        print(f"ERROR: Could not read {file_path}")
+    except Exception:
+        logger.exception("Error reading JSON file %s", file_path)
         return None
 
 
 def write_json_file(
-    file_path: str, data: Union[Dict[str, Any], BaseModel, ProjectKnowledgeBase]
+    file_path: str, data: Union[dict[str, Any], BaseModel]
 ) -> None:
     """Writes data (dict or Pydantic model) to a JSON file."""
     try:
@@ -58,40 +50,34 @@ def write_json_file(
                 json.dump(data.model_dump(), f, indent=4)
             else:
                 json.dump(data, f, indent=4)
-        logger.info(f"Data written to {file_path}")
-    except Exception as e:
-        logger.exception(f"Error writing to JSON file {file_path}: {e}")
-        print(f"ERROR: Failed to write to {file_path}. See log.")
+        logger.info("Data written to %s", file_path)
+    except Exception:
+        logger.exception("Error writing to JSON file %s", file_path)
 
 
-# The read_markdown and write_markdown will not change, so they remain the same
 def read_markdown_file(file_path: str) -> str:
     """Reads a Markdown file and returns its content as a string."""
     try:
         with open(file_path, "r", encoding="utf-8") as f:
             return f.read()
     except FileNotFoundError:
-        logger.error(f"File not found: {file_path}")
-        print(f"ERROR: File not found: {file_path}")
-        return ""  # Return empty string.
-    except Exception as e:
-        logger.exception(f"Error reading Markdown file {file_path}: {e}")
-        print(f"ERROR: Could not read {file_path}")
+        logger.error("File not found: %s", file_path)
+        return ""
+    except Exception:
+        logger.exception("Error reading Markdown file %s", file_path)
         return ""
 
 
 def write_markdown_file(file_path: str, content: str) -> None:
     """Writes a string to a Markdown file."""
     try:
-        # Ensure the directory exists
         Path(file_path).parent.mkdir(parents=True, exist_ok=True)
 
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(content)
 
-    except Exception as e:
-        logger.exception(f"Error writing to Markdown file {file_path}: {e}")
-        print(f"ERROR: Failed to write to {file_path}. See log.")
+    except Exception:
+        logger.exception("Error writing to Markdown file %s", file_path)
 
 
 def is_nonempty_file(file_path: Union[str, Path]) -> bool:
@@ -105,7 +91,7 @@ def is_nonempty_file(file_path: Union[str, Path]) -> bool:
     except UnicodeDecodeError:
         return path.stat().st_size > 0
     except Exception:
-        logger.exception(f"Error checking file content for {path}")
+        logger.exception("Error checking file content for %s", path)
         return False
 
 
@@ -153,25 +139,23 @@ def get_chapter_files(project_dir: str) -> list[str]:
     return [path for _, path in chapter_files]
 
 
-def extract_json_from_markdown(markdown_text: str) -> Optional[Dict[str, Any]]:
+def extract_json_from_markdown(markdown_text: str) -> Optional[dict[str, Any]]:
     """Extracts JSON from within Markdown code blocks, handling potential errors."""
     try:
-        # Find the start and end of the JSON code block
         start = markdown_text.find("```json")
         if start == -1:
-            return None  # No JSON code block found
+            return None
 
         start += len("```json")
         end = markdown_text.find("```", start)
         if end == -1:
-            return None  # No closing code block found
+            return None
 
         json_str = markdown_text[start:end].strip()
         return json.loads(json_str)
 
     except json.JSONDecodeError:
         return None
-    except Exception as e:
-        logger.exception(f"Error extracting JSON from Markdown: {e}")
-        print("Error extracting JSON.")
+    except Exception:
+        logger.exception("Error extracting JSON from Markdown")
         return None
