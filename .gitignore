@@ -11,3 +11,4 @@ build/
 projects/
 libriscribe.log
 llm_usage.jsonl
+.worktrees/
