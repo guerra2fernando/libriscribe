@@ -26,7 +26,7 @@ class OutlinerAgent(Agent):
         """Generates a chapter outline and then iterates to generate scene outlines."""
         try:
             # --- Step 1: Determine max chapters based on book length FIRST ---
-            max_chapters = self._get_max_chapters(project_knowledge_base.book_length)
+            max_chapters = self._get_max_chapters(project_knowledge_base)
 
             # Enhance the prompt with explicit chapter count instruction
             if project_knowledge_base.book_length == "Short Story":
@@ -39,6 +39,41 @@ class OutlinerAgent(Agent):
                 initial_prompt = prompts.OUTLINE_PROMPT.format(**project_knowledge_base.model_dump())
                 initial_prompt += f"\n\nIMPORTANT: Generate at most {max_chapters} chapters."
 
+            # Task 10: Append user's chapter count preference to prompt
+            num_ch = project_knowledge_base.num_chapters
+            num_ch_str = project_knowledge_base.get("num_chapters_str", "")
+            if num_ch_str and str(num_ch_str) not in ("0", ""):
+                ch_hint = f"\nAuthor's preferred chapter count: {num_ch_str}."
+            elif isinstance(num_ch, int) and num_ch > 0:
+                ch_hint = f"\nAuthor's preferred chapter count: {num_ch}."
+            elif isinstance(num_ch, tuple) and len(num_ch) == 2:
+                ch_hint = f"\nAuthor's preferred chapter count: {num_ch[0]}-{num_ch[1]}."
+            else:
+                ch_hint = ""
+            if ch_hint:
+                initial_prompt += ch_hint
+
+            # Task 3: Append advanced-mode author notes to prompt
+            _ADVANCED_FIELDS = [
+                ("inspired_by", "Inspired by"),
+                ("author_experience", "Author experience"),
+                ("key_takeaways", "Key takeaways"),
+                ("case_studies", "Includes case studies"),
+                ("actionable_advice", "Includes actionable advice"),
+                ("marketing_focus", "Marketing focus"),
+                ("sales_focus", "Sales focus"),
+                ("research_question", "Research question"),
+                ("hypothesis", "Hypothesis"),
+                ("methodology", "Methodology"),
+            ]
+            notes = []
+            for field, label in _ADVANCED_FIELDS:
+                val = project_knowledge_base.get(field)
+                if val is not None and val is not False and str(val).strip():
+                    notes.append(f"  - {label}: {val}")
+            if notes:
+                initial_prompt += "\n\nAuthor notes (incorporate into structure):\n" + "\n".join(notes)
+
             console.print("📝 [cyan]Creating chapter outline...[/cyan]")
             initial_outline = self.llm_client.generate_content(initial_prompt, max_tokens=3000, temperature=0.5)
             if not initial_outline:
@@ -47,6 +82,8 @@ class OutlinerAgent(Agent):
 
             # Process outline with max_chapters limit already included in prompt
             self.process_outline(project_knowledge_base, initial_outline, max_chapters)
+            # Task 11: Enforce chapter limit (trim any excess chapters the LLM may have generated)
+            self._enforce_chapter_limit(project_knowledge_base, max_chapters)
 
             # Save the overall outline first
             if output_path is None:
@@ -90,14 +127,27 @@ class OutlinerAgent(Agent):
             self.logger.exception("Error generating outline")
             console.print("[red]ERROR:[/red] Failed to generate outline. See log for details.")
 
-    def _get_max_chapters(self, book_length: str) -> int:
-        """Determine the maximum number of chapters based on book length."""
-        if book_length == "Short Story":
-            return 2
-        elif book_length == "Novella":
-            return 8
+    def _get_max_chapters(self, project_knowledge_base: ProjectKnowledgeBase) -> int:
+        """Determine the maximum number of chapters based on book length and user preference."""
+        pkb = project_knowledge_base
+        if pkb.book_length == "Short Story":
+            length_max = 2
+        elif pkb.book_length == "Novella":
+            length_max = 8
         else:
-            return 20
+            length_max = 20
+
+        num_ch = pkb.num_chapters
+        if isinstance(num_ch, tuple) and len(num_ch) == 2:
+            user_max = max(num_ch)
+        elif isinstance(num_ch, int) and num_ch > 0:
+            user_max = num_ch
+        else:
+            user_max = None
+
+        if user_max is not None:
+            return min(user_max, length_max)
+        return length_max
 
     def _enforce_chapter_limit(self, project_knowledge_base: ProjectKnowledgeBase, max_chapters: int) -> None:
         """Limit the number of chapters in the knowledge base to max_chapters."""
@@ -160,6 +210,27 @@ class OutlinerAgent(Agent):
 
             Be sure to include all main characters relevant to this chapter and create a natural flow between scenes.
             """
+
+            # Task 3: Append advanced-mode author notes to scene prompt
+            _ADVANCED_FIELDS = [
+                ("inspired_by", "Inspired by"),
+                ("author_experience", "Author experience"),
+                ("key_takeaways", "Key takeaways"),
+                ("case_studies", "Includes case studies"),
+                ("actionable_advice", "Includes actionable advice"),
+                ("marketing_focus", "Marketing focus"),
+                ("sales_focus", "Sales focus"),
+                ("research_question", "Research question"),
+                ("hypothesis", "Hypothesis"),
+                ("methodology", "Methodology"),
+            ]
+            notes = []
+            for field, label in _ADVANCED_FIELDS:
+                val = project_knowledge_base.get(field)
+                if val is not None and val is not False and str(val).strip():
+                    notes.append(f"  - {label}: {val}")
+            if notes:
+                scene_prompt += "\n\nAuthor notes (maintain consistency with these):\n" + "\n".join(notes)
 
             console.print(f"  Generating Scene Outline for Chapter {chapter.chapter_number}...")
             scene_outline_md = self.llm_client.generate_content(scene_prompt, max_tokens=2000, temperature=0.5)
