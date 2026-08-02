@@ -395,8 +395,8 @@ def get_project_name_and_title() -> tuple[str, str]:
         "📁 Enter a project name (this will be the directory name)"
     )
     console.print("")
-    title = _prompt_text("📕 What is the title of your book?")
-    return project_name, title
+    title = _prompt_text("📕 What is the title of your book? (optional — leave blank to let AI generate one)", default="")
+    return project_name, title or "Untitled"
 
 
 def get_category_and_genre(project_knowledge_base: ProjectKnowledgeBase):

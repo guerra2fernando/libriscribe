@@ -34,6 +34,14 @@ class ConceptGeneratorAgent(Agent):
         """
         try:
             # --- Step 1: Initial Concept Generation ---
+            user_title = project_knowledge_base.title
+            has_user_title = bool(user_title and user_title != "Untitled")
+            title_instruction = (
+                f'"title": MUST be exactly "{user_title}". Do not change it.'
+                if has_user_title
+                else '"title": A compelling title.'
+            )
+
             if project_knowledge_base.book_length == "Short Story":
                 initial_prompt = f"""Generate a concise book concept for a {project_knowledge_base.genre} {project_knowledge_base.category} short story.
                     The book should be written in {project_knowledge_base.language}.
@@ -41,7 +49,7 @@ class ConceptGeneratorAgent(Agent):
                     Initial ideas: {project_knowledge_base.description}.
 
                     Return a JSON object within a Markdown code block.  Include:
-                    - "title":  A compelling title.
+                    - {title_instruction}
                     - "logline": A one-sentence summary.
                     - "description": A short description (around 100-150 words).
 
@@ -59,7 +67,7 @@ class ConceptGeneratorAgent(Agent):
                 Initial ideas: {project_knowledge_base.description}.
 
                 Return a JSON object within a Markdown code block. Include:
-                - "title": A title.
+                - {title_instruction}
                 - "logline": A one-sentence summary.
                 - "description": A description (around 200 words).
 
@@ -140,7 +148,7 @@ class ConceptGeneratorAgent(Agent):
                 return None
 
             # --- Step 4: Update ProjectData (using refined concept) ---
-            if "title" in refined_concept_json:
+            if "title" in refined_concept_json and not has_user_title:
                 project_knowledge_base.title = refined_concept_json["title"]
             if "logline" in refined_concept_json:
                 project_knowledge_base.logline = refined_concept_json["logline"]
