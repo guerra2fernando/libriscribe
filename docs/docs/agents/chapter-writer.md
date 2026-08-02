@@ -34,7 +34,7 @@ STYLE CONSTRAINTS (patterns to avoid from prior chapter quality analysis):
 
 After each scene is generated, `ContentQualityAgent.score_prose()` evaluates it. If `overall_score < 0.65`:
 
-- The lowest-scoring axes are collected.
+- **All** axes scoring below the threshold are collected (not just the lowest three).
 - A rewrite prompt is built listing only the specific problems to fix, with strict instructions to preserve all character names, locations, events, and injuries.
 - One rewrite pass fires against the LLM (max 2 000 tokens).
 - If the rewrite fails or returns output shorter than half the original, the original scene is kept without error.
@@ -75,6 +75,32 @@ libriscribe write --chapter-number 1
 - Empty LLM response for a scene: placeholder text is inserted; chapter writing continues.
 - Narrative graph update failure: existing graph is preserved; chapter writing is not aborted.
 - Quality scoring or rewrite failure: original scene content is kept; chapter writing continues.
+
+## Pipeline Context Propagation
+
+These behaviours were added to ensure every user answer reaches each scene.
+
+### Character Profiles in Scene Prompts
+
+For each scene, `_write_scene()` looks up the full character profile for every character listed in `scene.characters`. If found in the PKB, a `CHARACTER PROFILES (keep consistent):` block is prepended to the scene prompt containing name, role, personality traits, background (first 120 chars), and character arc (first 80 chars).
+
+### Worldbuilding Context in Scene Prompts
+
+If `project_knowledge_base.worldbuilding` is set, a `WORLD CONTEXT (maintain consistency):` block is built from these fields (each truncated to 200 chars):
+
+`geography`, `key_locations`, `magic_system`, `culture_and_society`, `technology_level`, `setting_context`, `key_concepts`, `industry_overview`
+
+### Dynamic Questions in Scene Prompts
+
+Genre-specific Q&A from Advanced setup (`pkb.dynamic_questions`) is included as a `GENRE-SPECIFIC AUTHOR DETAILS:` block prepended to every scene prompt.
+
+### Chapter 1 Narrative Graph Seeding
+
+When writing chapter 1 and the narrative graph is empty, character trait facts are seeded into the graph before the first scene is generated. This gives `InvariantChecker` character context from scene 1 instead of starting blind.
+
+### Tone and Target Audience
+
+`SCENE_PROMPT.format(...)` now passes `tone` and `target_audience` from the PKB so the LLM respects the author's intended register from the first scene.
 
 ## Output Format
 

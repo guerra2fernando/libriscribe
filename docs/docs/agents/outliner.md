@@ -89,3 +89,42 @@ The Outliner Agent includes error handling for:
 - File system operations
 - Content generation issues
 - Format validation
+
+## Pipeline Context Propagation
+
+These behaviours were added to ensure every user answer reaches the outline.
+
+### User Chapter Count Respected
+
+`_get_max_chapters()` now reads `num_chapters_str` from the PKB to detect whether the user explicitly set a chapter count. When set, the user's preference is enforced (capped by length tier: Short Story ≤ 2, Novella ≤ 8, Novel ≤ 20). When not set (default `num_chapters=1`), the length-tier ceiling alone governs — the default is never mistaken for a user preference.
+
+A chapter count hint is also injected into the LLM prompt so the model targets the right number.
+
+### Author Notes Injected Into Prompts
+
+Both `execute()` (outline-level) and `generate_scene_outline()` (scene-level) append an **Author notes** block when any of these Advanced-mode PKB fields are set:
+
+| Field | Label |
+|---|---|
+| `inspired_by` | Inspired by |
+| `author_experience` | Author experience |
+| `key_takeaways` | Key takeaways |
+| `case_studies` | Includes case studies |
+| `actionable_advice` | Includes actionable advice |
+| `marketing_focus` | Marketing focus |
+| `sales_focus` | Sales focus |
+| `research_question` | Research question |
+| `hypothesis` | Hypothesis |
+| `methodology` | Methodology |
+
+### Dynamic Questions Propagated
+
+Genre-specific Q&A collected during Advanced setup (`pkb.dynamic_questions`) is appended to the Book Description in `generate_scene_outline()` so scene-level prompts reflect the author's genre-specific intentions.
+
+### Chapter Limit Enforced
+
+`_enforce_chapter_limit()` is called after `process_outline()` to strip any extra chapters the LLM may have generated beyond `max_chapters`.
+
+### Description Never Overwritten
+
+The user's original book description is never replaced by any LLM-generated summary. The internal `book_summary_lines` extraction loop still runs for parsing purposes but the assignment `project_knowledge_base.description = …` was removed.

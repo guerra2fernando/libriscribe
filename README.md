@@ -96,6 +96,16 @@ graph TD
 *   **Worldbuilding & Character Generation:** Generate complex multi-dimensional character profiles and coherent cultures.
 *   **Chapter Writing & Refining:** Continuous draft-review cycles via an expert editing loops.
 
+### 8. Full Pipeline Context Propagation 🔗
+*   **User intent preserved end-to-end:** The original book description is never overwritten by LLM-generated summaries — every agent sees what the author actually wrote.
+*   **Advanced-mode answers reach all prompts:** Fields like `inspired_by`, `key_takeaways`, `research_question`, and `methodology` are injected into outline and scene prompts instead of being silently discarded.
+*   **Dynamic questions propagated everywhere:** Genre-specific Q&A from Advanced setup now reaches the Outliner and Chapter Writer, not only Concept Generator and Character Generator.
+*   **Character profiles in scene writing:** Full profiles (personality, backstory, arc) are injected into every scene prompt so the writer knows who characters are, not just their names.
+*   **Worldbuilding context in scene writing:** Key worldbuilding fields (geography, magic system, key locations, etc.) are summarised and prepended to scene prompts for world consistency.
+*   **Chapter 1 narrative constraints:** The narrative graph is seeded with character facts before the first chapter is written, giving InvariantChecker context from scene 1.
+*   **User chapter count honoured:** Advanced mode chapter preferences (e.g. "8-12") are respected by the Outliner instead of defaulting to a length-only ceiling.
+*   **Complete quality rewrite coverage:** The reactive rewrite loop now fixes all failing quality axes, not just the lowest three.
+
 ### 7. Narrative Quality Layer 📖
 *   **NarrativeGraphBuilder:** After each chapter is written, an LLM pass extracts structured facts (entity, predicate, value) into a persistent `narrative_graph.json`. Facts survive partial runs — existing data is never overwritten on failure.
 *   **InvariantChecker:** Before each scene is generated, hard and soft invariant violations are detected (dead characters reappearing, injured limbs performing physical actions, destroyed locations revisited) and injected as `NARRATIVE CONSTRAINTS:` into the scene prompt — zero extra user steps.
