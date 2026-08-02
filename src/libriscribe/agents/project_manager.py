@@ -22,6 +22,7 @@ from libriscribe.agents.formatting_optimized import (
     OptimizedFormattingAgent as FormattingAgent,
 )
 from libriscribe.agents.outliner import OutlinerAgent
+from libriscribe.agents.pacing_agent import PacingAgent, PacingReport
 from libriscribe.agents.plagiarism_checker import PlagiarismCheckerAgent
 from libriscribe.agents.researcher import ResearcherAgent
 from libriscribe.agents.style_editor import StyleEditorAgent
@@ -80,6 +81,7 @@ class ProjectManagerAgent:
             "style_research": StyleResearchAgent(self.llm_client),
             "plagiarism_checker": PlagiarismCheckerAgent(self.llm_client),
             "fact_checker": FactCheckerAgent(self.llm_client),
+            "pacing": PacingAgent(self.llm_client),
         }
 
     def initialize_project_with_data(self, project_data: ProjectKnowledgeBase):
@@ -447,14 +449,23 @@ class ProjectManagerAgent:
         self.write_chapter(chapter_number)  # Write the chapter
         self.review_content(chapter_number)  # Review for content issues
         self.update_narrative_graph(chapter_number)  # Update graph before next chapter
+        self.check_narrative_violations(chapter_number)  # Report invariant violations
 
         if (
             self.project_knowledge_base
             and self.project_knowledge_base.review_preference == "AI"
         ):
-            # AI review - automatically edit without confirmation
-            self.edit_chapter(chapter_number)  # AI editing
-            self.edit_style(chapter_number)  # AI style editing
+            # Run pacing analysis across all chapters written so far
+            written = [
+                i for i in range(1, chapter_number + 1)
+                if self.does_chapter_exist(i)
+            ]
+            pacing_report = self.run_pacing_analysis(written) if written else None
+            pacing_guidance = ""
+            if pacing_report is not None:
+                pacing_guidance = PacingAgent.get_editor_guidance(pacing_report)
+            self.edit_chapter(chapter_number, pacing_guidance=pacing_guidance)
+            self.edit_style(chapter_number)
         elif (
             self.project_knowledge_base
             and self.project_knowledge_base.review_preference == "Human"
@@ -471,10 +482,31 @@ class ProjectManagerAgent:
             if typer.confirm("Do you want AI to refine the writing style?"):
                 self.edit_style(chapter_number)
 
-    def edit_chapter(self, chapter_number: int):
+    def edit_chapter(self, chapter_number: int, pacing_guidance: str = "") -> None:
         """Refines an existing chapter (Editor Agent)."""
-        self.run_agent("editor", chapter_number=chapter_number)
+        self.run_agent("editor", chapter_number=chapter_number, pacing_guidance=pacing_guidance)
         self.save_project_data()
+
+    def run_pacing_analysis(self, chapter_numbers: list[int]) -> "PacingReport | None":
+        """Runs PacingAgent over given chapters and returns the report."""
+        if not self.project_knowledge_base:
+            console.print("[red]ERROR: Project not initialized.[/red]")
+            return None
+        agent = self.agents.get("pacing")
+        if agent is None:
+            console.print("[red]ERROR: pacing agent not registered.[/red]")
+            return None
+        if self.llm_client:
+            selected_model = self._get_model_for_agent("pacing")
+            if selected_model:
+                self.llm_client.set_model(selected_model)
+            self.llm_client.set_fallback_chain(
+                self._get_fallback_chain_for_agent("pacing")
+            )
+        return cast(Any, agent).execute(
+            project_knowledge_base=self.project_knowledge_base,
+            chapter_numbers=chapter_numbers,
+        )
 
     def analyze_quality(self, chapter_number: int) -> None:
         """Runs ContentQualityAgent on the chapter and prints a summary to console."""
@@ -618,29 +650,29 @@ class ProjectManagerAgent:
                     )
                     return
 
-            # Format with LLM to ensure proper structure and flow
-            console.print(
-                f"{self.agents['formatting'].name} is: Formatting Original Chapters..."
-            )
-            prompt = prompts.FORMATTING_PROMPT.format(chapters=original_content)
-            formatted_original = self.llm_client.generate_content(
-                prompt, max_tokens=4000
-            )
-
-            # Add title page
-            title_page = self.create_title_page(self.project_knowledge_base)
-            formatted_original = title_page + formatted_original
-
             # Determine output path for original version
             original_output_path = output_path.replace(".md", "_original.md").replace(
                 ".pdf", "_original.pdf"
             )
 
+            title_page = self.create_title_page(self.project_knowledge_base)
+
+            console.print(
+                f"{self.agents['formatting'].name} is: Formatting Original Chapters..."
+            )
+
             # Save as Markdown or PDF (original version)
             if original_output_path.endswith(".md"):
-                write_markdown_file(original_output_path, formatted_original)
+                # Use OptimizedFormattingAgent — no LLM, no token cap
+                formatting_agent = cast(Any, self.agents["formatting"])
+                formatting_agent.execute(str(self.project_dir), original_output_path)
                 console.print("[green]📚 Original version formatted and saved![/green]")
             elif original_output_path.endswith(".pdf"):
+                prompt = prompts.FORMATTING_PROMPT.format(chapters=original_content)
+                formatted_original = self.llm_client.generate_content(
+                    prompt, max_tokens=32000
+                )
+                formatted_original = title_page + formatted_original
                 self.markdown_to_pdf(formatted_original, original_output_path)
                 console.print("[green]📚 Original version formatted and saved![/green]")
             else:
@@ -701,23 +733,25 @@ class ProjectManagerAgent:
                     f"[yellow]Info: {len(missing_revised_chapters)} chapters don't have revised versions[/yellow]"
                 )
 
-            # Format with LLM
             console.print(
                 f"{self.agents['formatting'].name} is: Formatting Revised Chapters..."
             )
-            prompt_revised = prompts.FORMATTING_PROMPT.format(chapters=revised_content)
-            formatted_revised = self.llm_client.generate_content(
-                prompt_revised, max_tokens=4000
-            )
-            formatted_revised = title_page + formatted_revised
 
             # Save as Markdown or PDF (revised)
             if output_path.endswith(".md"):
-                write_markdown_file(output_path, formatted_revised)
+                # Use OptimizedFormattingAgent — assembles revised chapters without LLM
+                formatting_agent = cast(Any, self.agents["formatting"])
+                formatting_agent.execute(str(self.project_dir), output_path)
                 console.print(
                     f"[green]Revised version formatted and saved to: {output_path}[/green]"
                 )
             elif output_path.endswith(".pdf"):
+                prompt_revised = prompts.FORMATTING_PROMPT.format(chapters=revised_content)
+                formatted_revised = self.llm_client.generate_content(
+                    prompt_revised, max_tokens=32000
+                )
+                title_page = self.create_title_page(self.project_knowledge_base)
+                formatted_revised = title_page + formatted_revised
                 self.markdown_to_pdf(formatted_revised, output_path)
                 console.print(
                     f"[green]Revised version formatted and saved to: {output_path}[/green]"
@@ -779,7 +813,7 @@ class ProjectManagerAgent:
             return
         chapter_path = str(self.project_dir / f"chapter_{chapter_number}.md")
         reviewer = cast(Any, self.agents["content_reviewer"])
-        results = reviewer.execute(chapter_path) or {}
+        results = reviewer.execute(chapter_path, self.project_knowledge_base) or {}
         review_text = (
             results.get("review", "No review available.")
             if isinstance(results, dict)

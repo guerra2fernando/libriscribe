@@ -132,6 +132,9 @@ class WorldbuildingAgent(Agent):
                         console.print(f"- [cyan]{key.replace('_', ' ').title()}:[/cyan] {value}")
 
                 if output_path is None:
+                    if not project_knowledge_base.project_dir:
+                        self.logger.error("project_dir not set; cannot save worldbuilding.")
+                        return
                     output_path = str(Path(project_knowledge_base.project_dir) / "world.json")
                     
                 # Save ONLY the fields relevant to the category

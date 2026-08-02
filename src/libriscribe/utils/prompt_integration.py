@@ -46,9 +46,14 @@ class ExternalPromptMixin:
         max_tokens = settings.get('max_tokens', default_max_tokens)
         temperature = settings.get('temperature', 0.7)
         
-        return self.llm_client.generate_content(
-            formatted_prompt, 
-            max_tokens=max_tokens, 
+        llm = getattr(self, "llm_client", None)
+        if llm is None:
+            raise AttributeError(
+                f"{type(self).__name__} must have an llm_client attribute to use ExternalPromptMixin"
+            )
+        return llm.generate_content(  # type: ignore[union-attr]
+            formatted_prompt,
+            max_tokens=max_tokens,
             temperature=temperature,
             operation=f"{prompt_name}_generation"
         )

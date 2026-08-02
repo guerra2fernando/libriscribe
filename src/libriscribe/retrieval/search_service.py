@@ -66,7 +66,8 @@ class SearchServiceImpl:
         # Let's read from the project_data.json if present
         project_data_path = project_dir / "project_data.json"
         if project_data_path.exists():
-            kb = ProjectKnowledgeBase.load_from_file(str(project_data_path))
+            _loaded = ProjectKnowledgeBase.load_from_file(str(project_data_path))
+            kb = _loaded if _loaded is not None else ProjectKnowledgeBase(project_name=project_dir.name)
         else:
             kb = ProjectKnowledgeBase(project_name=project_dir.name)
 

@@ -4,8 +4,12 @@ from typing import Dict, Optional
 
 import anthropic
 import requests
-from google import genai
-from google.genai import types as google_genai_types
+try:
+    from google import genai  # type: ignore[attr-defined]
+    from google.genai import types as google_genai_types  # type: ignore[attr-defined]
+except ImportError:  # pragma: no cover
+    genai = None  # type: ignore[assignment]
+    google_genai_types = None  # type: ignore[assignment]
 from openai import OpenAI
 
 from libriscribe.settings import Settings
@@ -66,7 +70,7 @@ class LLMClient:
         elif provider == "google_ai_studio":
             if not self.settings.google_ai_studio_api_key:
                 raise ValueError("Google AI Studio API key is not set.")
-            client = genai.Client(api_key=self.settings.google_ai_studio_api_key)
+            client = genai.Client(api_key=self.settings.google_ai_studio_api_key)  # type: ignore[union-attr]
         elif provider == "deepseek":
             if not self.settings.deepseek_api_key:
                 raise ValueError("DeepSeek API key is not set.")
@@ -293,7 +297,9 @@ class LLMClient:
         model = route.model
 
         if provider in {"openai", "openrouter"}:
-            client = self._get_client_for_provider(provider)
+            _raw_client = self._get_client_for_provider(provider)
+            assert isinstance(_raw_client, OpenAI), f"Expected OpenAI client for {provider}, got {type(_raw_client)}"
+            client = _raw_client
             request_prompt = prompt
             if provider == "openrouter":
                 request_prompt = (
@@ -316,25 +322,26 @@ class LLMClient:
 
         if provider == "claude":
             client = self._get_client_for_provider(provider)
-            response = client.messages.create(
+            response = client.messages.create(  # type: ignore[union-attr]
                 model=model,
                 max_tokens=max_tokens,
                 temperature=temperature,
                 messages=[{"role": "user", "content": prompt}],
             )
-            text_content = response.content[0].text.strip()
+            block = response.content[0]
+            text_content = (block.text if hasattr(block, "text") else "").strip()  # type: ignore[union-attr]
             self._log_usage(provider, model, prompt, text_content)
             return text_content
 
         if provider == "google_ai_studio":
             client = self._get_client_for_provider(provider)
-            response = client.models.generate_content(
+            response = client.models.generate_content(  # type: ignore[union-attr, attr-defined]
                 model=model,
                 contents=prompt,
-                config=google_genai_types.GenerateContentConfig(
+                config=google_genai_types.GenerateContentConfig(  # type: ignore[union-attr, attr-defined]
                     temperature=temperature,
                     max_output_tokens=max_tokens,
-                    thinking_config=google_genai_types.ThinkingConfig(
+                    thinking_config=google_genai_types.ThinkingConfig(  # type: ignore[union-attr, attr-defined]
                         thinking_budget=0,
                     ),
                 ),

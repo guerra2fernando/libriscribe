@@ -20,6 +20,9 @@ class StyleEditorAgent(Agent):
 
     def execute(self, project_knowledge_base: ProjectKnowledgeBase, chapter_number: int) -> None:
         """Refines style based on project settings."""
+        if not project_knowledge_base.project_dir:
+            self.logger.error("project_dir not set on knowledge base.")
+            return
         chapter_path = str(Path(project_knowledge_base.project_dir) / f"chapter_{chapter_number}.md")
         chapter_content = read_markdown_file(chapter_path)
         if not chapter_content:
@@ -50,7 +53,7 @@ class StyleEditorAgent(Agent):
         ---
         """  # Added Markdown code block
         try:
-            response = self.llm_client.generate_content(prompt, max_tokens=3000)
+            response = self.llm_client.generate_content(prompt, max_tokens=32000)
             
             # Extract the revised content from the response
             if "```" in response:

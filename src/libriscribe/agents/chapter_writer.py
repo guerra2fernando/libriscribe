@@ -14,7 +14,7 @@ from libriscribe.narrative.graph_builder import NarrativeGraphBuilder
 from libriscribe.narrative.invariant_checker import InvariantChecker
 from libriscribe.narrative.models import NarrativeFact, NarrativeGraph
 from libriscribe.utils import prompts_context as prompts
-from libriscribe.utils.file_utils import write_markdown_file
+from libriscribe.utils.file_utils import read_markdown_file, write_markdown_file
 from libriscribe.utils.llm_client import LLMClient
 from libriscribe.utils.prompts_context import format_style_profile_block
 
@@ -95,6 +95,7 @@ class ChapterWriterAgent(Agent):
 
             # Option A: build style hints from prior chapter quality report
             style_block = self._build_style_hints(chapter_number, project_dir)
+            research_block = self._build_research_block(project_dir)
 
             if not chapter.scenes:
                 chapter.scenes.append(self._default_scene())
@@ -113,6 +114,7 @@ class ChapterWriterAgent(Agent):
                     ordered_scenes=ordered_scenes,
                     checker=checker,
                     style_block=style_block,
+                    research_block=research_block,
                 )
                 scene_contents.append(scene_content)
 
@@ -183,6 +185,25 @@ class ChapterWriterAgent(Agent):
         block += "\n".join(hints)
         return block
 
+    def _build_research_block(self, project_dir: Optional[Path]) -> str:
+        """Load research_results.md and return a RESEARCH CONTEXT block (truncated to 1200 chars)."""
+        if project_dir is None:
+            return ""
+        research_path = project_dir / "research_results.md"
+        if not research_path.exists():
+            return ""
+        try:
+            text = read_markdown_file(str(research_path))
+            if not text.strip():
+                return ""
+            snippet = text[:1200].rstrip()
+            if len(text) > 1200:
+                snippet += "\n[...truncated]"
+            return "RESEARCH CONTEXT (relevant background for this scene):\n" + snippet
+        except Exception:
+            self.logger.warning("Could not read research_results.md.")
+            return ""
+
     # ------------------------------------------------------------------
     # Scene writing with Option B: reactive rewrite loop
     # ------------------------------------------------------------------
@@ -196,6 +217,7 @@ class ChapterWriterAgent(Agent):
         ordered_scenes: list,
         checker: InvariantChecker,
         style_block: str,
+        research_block: str = "",
     ) -> str:
         """Build prompt, generate scene, optionally rewrite if quality is below threshold."""
         violations = checker.check_scene(scene, chapter_number, project_knowledge_base)
@@ -266,7 +288,7 @@ class ChapterWriterAgent(Agent):
             if wb_parts:
                 worldbuilding_block = "WORLD CONTEXT (maintain consistency):\n" + "\n".join(wb_parts)
 
-        prefix_parts = [p for p in [constraint_block, style_block, style_profile_block, dq_block, char_profiles_block, worldbuilding_block] if p]
+        prefix_parts = [p for p in [constraint_block, style_block, style_profile_block, dq_block, char_profiles_block, worldbuilding_block, research_block] if p]
         if prefix_parts:
             scene_prompt = "\n\n".join(prefix_parts) + "\n\n" + scene_prompt
 

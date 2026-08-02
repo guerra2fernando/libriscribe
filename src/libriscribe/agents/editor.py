@@ -22,11 +22,18 @@ class EditorAgent(Agent):
     def __init__(self, llm_client: LLMClient):
         super().__init__("EditorAgent", llm_client)
 
-    def execute(self, project_knowledge_base: ProjectKnowledgeBase, chapter_number: int) -> None:
+    def execute(
+        self,
+        project_knowledge_base: ProjectKnowledgeBase,
+        chapter_number: int,
+        pacing_guidance: str = "",
+    ) -> None:
         """Edits a chapter and saves the revised version."""
         chapter_path = f"chapter_{chapter_number}.md"
         try:
-            #--- FIX: Construct the path correctly using project_dir ---
+            if not project_knowledge_base.project_dir:
+                self.logger.error("project_dir not set on knowledge base.")
+                return
             chapter_path = str(Path(project_knowledge_base.project_dir) / f"chapter_{chapter_number}.md")
             chapter_content = read_markdown_file(chapter_path)
             if not chapter_content:
@@ -63,7 +70,9 @@ class EditorAgent(Agent):
 
             console.print(f"✏️ [cyan]Editing Chapter {chapter_number} based on feedback...[/cyan]")
             prompt = prompts.EDITOR_PROMPT.format(**prompt_data) + scene_titles_instruction
-            edited_response = self.llm_client.generate_content(prompt, max_tokens=8000)
+            if pacing_guidance:
+                prompt = pacing_guidance + "\n\n" + prompt
+            edited_response = self.llm_client.generate_content(prompt, max_tokens=32000)
             # --- KEY FIX: Use extract_json_from_markdown and check for None ---
             if "```" in edited_response:
                 start = edited_response.find("```") + 3
@@ -105,6 +114,11 @@ class EditorAgent(Agent):
         except Exception as e:
             self.logger.exception(f"Error editing chapter {chapter_path}: {e}")
             print("ERROR: Failed to edit chapter. See log.")
+
+    def extract_scene_titles(self, chapter_content: str) -> list[str]:
+        """Extracts scene title strings from chapter content."""
+        import re
+        return re.findall(r'\*\*Scene \d+: (.+?)\*\*', chapter_content)
 
     def extract_chapter_number(self, chapter_path: str) -> int:
         """Extracts chapter number."""

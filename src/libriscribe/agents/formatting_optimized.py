@@ -22,7 +22,10 @@ class OptimizedFormattingAgent(Agent):
             
             project_data_path = Path(project_dir) / "project_data.json"
             project_knowledge_base = ProjectKnowledgeBase.load_from_file(str(project_data_path))
-            
+            if project_knowledge_base is None:
+                console.print("[red]ERROR: Could not load project data for formatting.[/red]")
+                return
+
             formatted_content = self._create_formatted_book(project_dir, project_knowledge_base)
             
             if output_path.endswith(".md"):

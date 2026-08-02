@@ -739,6 +739,21 @@ def format_book(
         console.print("\n[green]📘 Book formatted and saved![/green]")
 
 
+def get_tone_and_audience(project_knowledge_base: ProjectKnowledgeBase):
+    console.print("")
+    tone = select_from_list(
+        "🎭 What tone would you like for your book?",
+        ["Serious", "Funny", "Romantic", "Informative", "Persuasive"],
+    )
+    project_knowledge_base.set("tone", tone)
+    console.print("")
+    target_audience = select_from_list(
+        "👥 Who is your target audience?",
+        ["Children", "Teens", "Young Adult", "Adults"],
+    )
+    project_knowledge_base.set("target_audience", target_audience)
+
+
 # --- Simple Mode (Refactored) ---
 def simple_mode():
     console.print("\n[cyan]✨ Starting Simple Mode...[/cyan]\n")
@@ -757,11 +772,13 @@ def simple_mode():
     get_category_and_genre(project_knowledge_base)
     get_book_length(project_knowledge_base)
     get_fiction_details(project_knowledge_base)
+    get_tone_and_audience(project_knowledge_base)
     get_review_preference(project_knowledge_base)
     configure_chapter_writing_flow(project_knowledge_base)
     get_description(project_knowledge_base)
 
     project_manager.initialize_project_with_data(project_knowledge_base)
+    get_dynamic_questions(project_knowledge_base)
 
     if generate_and_review_concept(project_knowledge_base):
         generate_and_edit_outline(project_knowledge_base)
@@ -1432,8 +1449,8 @@ def _load_retrieval_project(project_name: str) -> None:
 
     ret_config = getattr(project_manager.project_knowledge_base, "retrieval", None)
     if not ret_config:
-        from libriscribe.retrieval.models import RetrievalConfig
-        project_manager.project_knowledge_base.retrieval = RetrievalConfig(enabled=True, mode="keyword")
+        from libriscribe.retrieval.models import RetrievalConfig, RetrievalMode
+        project_manager.project_knowledge_base.retrieval = RetrievalConfig(enabled=True, mode=RetrievalMode.KEYWORD)
         project_manager.save_project_data()
     elif not ret_config.enabled:
         ret_config.enabled = True
@@ -1480,7 +1497,7 @@ def search(
 
     console.print(f"\n[green]Found {len(results)} results:[/green]")
     for i, res in enumerate(results, 1):
-        console.print(f"\n[bold]{i}. {res.title}[/bold] (Score: {res.score:.4f}, Type: {res.source_type})")
+        console.print(f"\n[bold]{i}. {res.text[:80]}[/bold] (Score: {res.score:.4f}, Type: {res.source_type})")
         snippet = res.text[:200] + "..." if len(res.text) > 200 else res.text
         console.print(f"   [dim]{snippet}[/dim]")
 

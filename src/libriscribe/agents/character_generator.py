@@ -52,6 +52,9 @@ class CharacterGeneratorAgent(Agent):
                 for char_data in characters:
                     try:
                         # Normalize keys to lowercase
+                        if not isinstance(char_data, dict):
+                            self.logger.warning("Skipping non-dict character entry: %s", type(char_data).__name__)
+                            continue
                         char_data = {k.lower(): v for k, v in char_data.items()}
 
                         # --- FIX for relationships and Nested Data ---
@@ -152,8 +155,11 @@ class CharacterGeneratorAgent(Agent):
                 print("Error:", e)
                 return
             if output_path is None:
+                if not project_knowledge_base.project_dir:
+                    self.logger.error("project_dir not set; cannot save characters.")
+                    return
                 output_path = str(Path(project_knowledge_base.project_dir) / "characters.json")
-            write_json_file(output_path, processed_characters)  # Save characters
+            write_json_file(output_path, {"characters": processed_characters})  # Save characters
             console.print("[green]💾 Character profiles saved![/green]")
 
         except Exception as e:
