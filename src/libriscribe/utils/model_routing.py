@@ -10,6 +10,8 @@ SUPPORTED_PROVIDERS = (
     "deepseek",
     "mistral",
     "openrouter",
+    "bedrock",
+    "bedrock_mantle",
 )
 
 
@@ -40,6 +42,8 @@ def get_default_model_for_provider(
         "deepseek": settings.deepseek_model,
         "mistral": settings.mistral_model,
         "openrouter": settings.openrouter_model,
+        "bedrock": settings.bedrock_model,
+        "bedrock_mantle": settings.bedrock_mantle_model,
     }.get(provider, "")
 
 

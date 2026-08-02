@@ -1,13 +1,16 @@
+import json
 import logging
 import re
 from typing import Dict, Optional
 
 import anthropic
+import boto3
 import requests
 try:
     from google import genai  # type: ignore[attr-defined]
     from google.genai import types as google_genai_types  # type: ignore[attr-defined]
     logging.getLogger("google.genai").setLevel(logging.WARNING)
+    logging.getLogger("google_genai.models").setLevel(logging.WARNING)
 except ImportError:  # pragma: no cover
     genai = None  # type: ignore[assignment]
     google_genai_types = None  # type: ignore[assignment]
@@ -80,6 +83,23 @@ class LLMClient:
             if not self.settings.mistral_api_key:
                 raise ValueError("Mistral API key is not set.")
             client = None
+        elif provider == "bedrock":
+            session_kwargs: dict = {"region_name": self.settings.bedrock_region}
+            if self.settings.bedrock_access_key_id and self.settings.bedrock_secret_access_key:
+                session_kwargs["aws_access_key_id"] = self.settings.bedrock_access_key_id
+                session_kwargs["aws_secret_access_key"] = self.settings.bedrock_secret_access_key
+                if self.settings.bedrock_session_token:
+                    session_kwargs["aws_session_token"] = self.settings.bedrock_session_token
+            client = boto3.client("bedrock-runtime", **session_kwargs)
+        elif provider == "bedrock_mantle":
+            if not self.settings.bedrock_mantle_api_key:
+                raise ValueError("Bedrock Mantle API key is not set.")
+            if not self.settings.bedrock_mantle_base_url:
+                raise ValueError("Bedrock Mantle base URL is not set.")
+            client = OpenAI(
+                api_key=self.settings.bedrock_mantle_api_key,
+                base_url=self.settings.bedrock_mantle_base_url,
+            )
         else:
             raise ValueError(f"Unsupported LLM provider: {provider}")
 
@@ -392,6 +412,39 @@ class LLMClient:
             )
             response.raise_for_status()
             content = response.json()["choices"][0]["message"]["content"].strip()
+            self._log_usage(provider, model, prompt, content)
+            return content
+
+        if provider == "bedrock":
+            bedrock_client = self._get_client_for_provider(provider)
+            body = json.dumps({
+                "anthropic_version": "bedrock-2023-05-31",
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+                "messages": [{"role": "user", "content": prompt}],
+            })
+            response = bedrock_client.invoke_model(  # type: ignore[union-attr]
+                modelId=model,
+                body=body,
+                contentType="application/json",
+                accept="application/json",
+            )
+            response_body = json.loads(response["body"].read())
+            content = response_body["content"][0]["text"].strip()
+            self._log_usage(provider, model, prompt, content)
+            return content
+
+        if provider == "bedrock_mantle":
+            _raw_client = self._get_client_for_provider(provider)
+            assert isinstance(_raw_client, OpenAI), f"Expected OpenAI client for {provider}, got {type(_raw_client)}"
+            mantle_client = _raw_client
+            response = mantle_client.chat.completions.create(
+                model=model,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=max_tokens,
+                temperature=temperature,
+            )
+            content = (response.choices[0].message.content or "").strip()
             self._log_usage(provider, model, prompt, content)
             return content
 

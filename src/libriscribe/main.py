@@ -65,6 +65,8 @@ PROVIDER_LABELS = {
     "deepseek": "DeepSeek",
     "mistral": "Mistral",
     "openrouter": "OpenRouter",
+    "bedrock": "AWS Bedrock",
+    "bedrock_mantle": "Bedrock Mantle",
 }
 
 AGENT_MODEL_OPTIONS = [
@@ -92,6 +94,8 @@ def get_default_model_for_provider(
         "deepseek": settings.deepseek_model,
         "mistral": settings.mistral_model,
         "openrouter": settings.openrouter_model,
+        "bedrock": settings.bedrock_model,
+        "bedrock_mantle": settings.bedrock_mantle_model,
     }.get(provider, "")
 
 
@@ -111,6 +115,19 @@ def get_available_llm_providers(settings: Settings | None = None) -> list[str]:
         available_llms.append("deepseek")
     if settings.mistral_api_key:
         available_llms.append("mistral")
+    # Bedrock: available if explicit keys set OR if running on AWS (instance profile / env vars)
+    if settings.bedrock_access_key_id or settings.bedrock_secret_access_key:
+        available_llms.append("bedrock")
+    else:
+        try:
+            import boto3
+            sts = boto3.client("sts", region_name=settings.bedrock_region)
+            sts.get_caller_identity()
+            available_llms.append("bedrock")
+        except Exception:
+            pass
+    if settings.bedrock_mantle_api_key and settings.bedrock_mantle_base_url:
+        available_llms.append("bedrock_mantle")
 
     return available_llms
 

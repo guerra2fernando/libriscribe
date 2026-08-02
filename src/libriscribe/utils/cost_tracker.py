@@ -12,6 +12,8 @@ class CostTracker:
         "anthropic/claude-3-5-sonnet": (0.003, 0.015),
         "openrouter/anthropic/claude-3.5-sonnet": (0.003, 0.015),
         "openrouter/openai/gpt-4o": (0.0025, 0.01),
+        "bedrock/us.anthropic.claude-sonnet-4-6-20251001-v1:0": (0.003, 0.015),
+        "bedrock_mantle/qwen.qwen3-coder-next": (0.0, 0.0),
     }
     
     def __init__(self, log_file: str = "llm_usage.jsonl"):
