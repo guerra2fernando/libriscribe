@@ -211,7 +211,12 @@ class ChapterWriterAgent(Agent):
         )
 
         # Prepend constraint blocks (invariants first, then style hints)
-        prefix_parts = [p for p in [constraint_block, style_block] if p]
+        dq = project_knowledge_base.dynamic_questions
+        dq_block = ""
+        if dq:
+            dq_lines = "\n".join(f"  - {q}: {a}" for q, a in dq.items())
+            dq_block = "GENRE-SPECIFIC AUTHOR DETAILS:\n" + dq_lines
+        prefix_parts = [p for p in [constraint_block, style_block, dq_block] if p]
         if prefix_parts:
             scene_prompt = "\n\n".join(prefix_parts) + "\n\n" + scene_prompt
 

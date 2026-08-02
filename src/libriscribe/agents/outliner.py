@@ -117,13 +117,18 @@ class OutlinerAgent(Agent):
     def generate_scene_outline(self, project_knowledge_base: ProjectKnowledgeBase, chapter: Chapter) -> bool:
         """Generates the scene outline for a single chapter."""
         try:
+            dq = project_knowledge_base.dynamic_questions
+            dq_note = ""
+            if dq:
+                dq_lines = "\n".join(f"  - {q}: {a}" for q, a in dq.items())
+                dq_note = f"\n\nGenre-specific author details:\n{dq_lines}"
             scene_prompt = f"""
             Create a detailed outline for the scenes in Chapter {chapter.chapter_number}: {chapter.title}
             of a {project_knowledge_base.genre} book titled "{project_knowledge_base.title}"
             which is categorized as {project_knowledge_base.category}.
             The book should be written in {project_knowledge_base.language}.
 
-            Book Description: {project_knowledge_base.description}
+            Book Description: {project_knowledge_base.description}{dq_note}
 
             Chapter Summary: {chapter.summary}
 
