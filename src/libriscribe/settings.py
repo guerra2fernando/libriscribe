@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     openrouter_base_url: str = "https://openrouter.ai/api/v1"
     openrouter_model: str = "anthropic/claude-3-haiku"
     bedrock_region: str = "us-east-1"
-    bedrock_model: str = "us.anthropic.claude-sonnet-4-6-20251001-v1:0"
+    bedrock_model: str = "us.anthropic.claude-sonnet-4-6"
     bedrock_access_key_id: str = ""
     bedrock_secret_access_key: str = ""
     bedrock_session_token: str = ""

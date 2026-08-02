@@ -71,7 +71,7 @@ This guide walks you through installing LibriScribe, configuring model defaults,
 
    # AWS Bedrock (explicit keys optional — falls back to instance profile / env AWS_* vars)
    BEDROCK_REGION=us-east-1
-   BEDROCK_MODEL=us.anthropic.claude-sonnet-4-6-20251001-v1:0
+   BEDROCK_MODEL=us.anthropic.claude-sonnet-4-6
    BEDROCK_ACCESS_KEY_ID=your_access_key_id
    BEDROCK_SECRET_ACCESS_KEY=your_secret_access_key
 
