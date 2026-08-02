@@ -27,6 +27,7 @@ class EditorAgent(Agent):
         project_knowledge_base: ProjectKnowledgeBase,
         chapter_number: int,
         pacing_guidance: str = "",
+        quality_guidance: str = "",
     ) -> None:
         """Edits a chapter and saves the revised version."""
         chapter_path = f"chapter_{chapter_number}.md"
@@ -72,6 +73,8 @@ class EditorAgent(Agent):
             prompt = prompts.EDITOR_PROMPT.format(**prompt_data) + scene_titles_instruction
             if pacing_guidance:
                 prompt = pacing_guidance + "\n\n" + prompt
+            if quality_guidance:
+                prompt = quality_guidance + "\n\n" + prompt
             edited_response = self.llm_client.generate_content(prompt, max_tokens=32000)
             # --- KEY FIX: Use extract_json_from_markdown and check for None ---
             if "```" in edited_response:

@@ -7,6 +7,13 @@
 # Generated files
 .docusaurus
 .cache-loader
+.superpowers
+.mypy_cache
+.pytest_cache
+.ruff_cache
+.venv
+llm_usage.jsonl
+libriscribe.log
 
 # Misc
 .DS_Store

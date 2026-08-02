@@ -9,7 +9,7 @@ from libriscribe.utils.llm_client import LLMClient
 from libriscribe.utils import prompts_context as prompts
 from libriscribe.agents.agent_base import Agent
 from libriscribe.utils.file_utils import write_json_file, extract_json_from_markdown
-from libriscribe.utils.prompts_context import get_worldbuilding_aspects #Import the correct function
+from libriscribe.utils.prompts_context import get_worldbuilding_aspects, format_style_profile_block
 
 from libriscribe.knowledge_base import ProjectKnowledgeBase, Worldbuilding
 from rich.console import Console
@@ -43,8 +43,16 @@ class WorldbuildingAgent(Agent):
                 category=project_knowledge_base.category,
                 language=project_knowledge_base.language,
                 description=project_knowledge_base.description
-                # ... other relevant fields
             )
+
+            style_block = format_style_profile_block(project_knowledge_base.style_profile)
+            if style_block:
+                prompt += f"\n\n{style_block}"
+
+            dq = project_knowledge_base.dynamic_questions
+            if dq:
+                dq_lines = "\n".join(f"  - {q}: {a}" for q, a in dq.items())
+                prompt += f"\n\nGenre-specific author details:\n{dq_lines}"
 
             worldbuilding_json_str = self.llm_client.generate_content_with_json_repair(prompt, max_tokens=4000, temperature=0.7)
             if not worldbuilding_json_str:

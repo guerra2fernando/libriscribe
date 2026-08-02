@@ -1,0 +1,383 @@
+diff --git a/src/libriscribe/agents/chapter_writer.py b/src/libriscribe/agents/chapter_writer.py
+index 4434492..dce0e33 100644
+--- a/src/libriscribe/agents/chapter_writer.py
++++ b/src/libriscribe/agents/chapter_writer.py
+@@ -71,16 +71,31 @@ class ChapterWriterAgent(Agent):
+             project_dir = (
+                 Path(project_knowledge_base.project_dir)
+                 if project_knowledge_base.project_dir
+                 else None
+             )
+ 
+             # Load narrative graph for InvariantChecker
+             narrative_graph = self._load_narrative_graph(project_dir, project_knowledge_base.project_name)
++            # Seed Ch1 graph with character facts so InvariantChecker has context from the start
++            if not narrative_graph.facts and project_knowledge_base.characters:
++                from libriscribe.narrative.models import NarrativeFact
++                for char in project_knowledge_base.characters.values():
++                    fact_id = NarrativeFact.make_id(char.name, "has_traits", char.personality_traits or "")
++                    narrative_graph.facts.append(NarrativeFact(
++                        fact_id=fact_id,
++                        entity=char.name,
++                        entity_type="character",
++                        predicate="has_traits",
++                        value=(char.personality_traits or "")[:200],
++                        chapter=0,
++                        evidence_quote=f"Character profile: {char.role or 'unknown role'}",
++                        negated=False,
++                    ))
+             checker = InvariantChecker(narrative_graph)
+ 
+             # Option A: build style hints from prior chapter quality report
+             style_block = self._build_style_hints(chapter_number, project_dir)
+ 
+             if not chapter.scenes:
+                 chapter.scenes.append(self._default_scene())
+ 
+@@ -195,28 +210,64 @@ class ChapterWriterAgent(Agent):
+ 
+         scene_prompt = prompts.SCENE_PROMPT.format(
+             chapter_number=chapter_number,
+             chapter_title=chapter.title,
+             book_title=project_knowledge_base.title,
+             genre=project_knowledge_base.genre,
+             category=project_knowledge_base.category,
+             language=project_knowledge_base.language,
++            tone=project_knowledge_base.tone,
++            target_audience=project_knowledge_base.target_audience,
+             chapter_summary=chapter.summary,
+             scene_number=scene.scene_number,
+             scene_summary=scene.summary,
+             characters=", ".join(scene.characters) if scene.characters else "None specified",
+             setting=scene.setting or "None specified",
+             goal=scene.goal or "None specified",
+             emotional_beat=scene.emotional_beat or "None specified",
+             total_scenes=len(ordered_scenes),
+         )
+ 
+         # Prepend constraint blocks (invariants first, then style hints)
+-        prefix_parts = [p for p in [constraint_block, style_block] if p]
++        dq = project_knowledge_base.dynamic_questions
++        dq_block = ""
++        if dq:
++            dq_lines = "\n".join(f"  - {q}: {a}" for q, a in dq.items())
++            dq_block = "GENRE-SPECIFIC AUTHOR DETAILS:\n" + dq_lines
++        # Task 5: Inject character profiles for scene characters
++        char_profiles: list[str] = []
++        for name in (scene.characters or []):
++            char = project_knowledge_base.get_character(name)
++            if char:
++                char_profiles.append(
++                    f"- {char.name} ({char.role}): {char.personality_traits}. "
++                    f"Background: {char.background[:120] if char.background else 'N/A'}. "
++                    f"Arc: {char.character_arc[:80] if char.character_arc else 'N/A'}."
++                )
++        char_profiles_block = ""
++        if char_profiles:
++            char_profiles_block = "CHARACTER PROFILES (keep consistent):\n" + "\n".join(char_profiles)
++
++        # Task 7: Inject worldbuilding context
++        worldbuilding_block = ""
++        wb = project_knowledge_base.worldbuilding
++        if wb:
++            wb_parts: list[str] = []
++            for attr in ["geography", "key_locations", "magic_system", "culture_and_society",
++                         "technology_level", "setting_context", "key_concepts", "industry_overview"]:
++                val = getattr(wb, attr, None)
++                if val and isinstance(val, str) and val.strip():
++                    label = attr.replace("_", " ").title()
++                    snippet = val[:200].rstrip()
++                    wb_parts.append(f"  {label}: {snippet}...")
++            if wb_parts:
++                worldbuilding_block = "WORLD CONTEXT (maintain consistency):\n" + "\n".join(wb_parts)
++
++        prefix_parts = [p for p in [constraint_block, style_block, dq_block, char_profiles_block, worldbuilding_block] if p]
+         if prefix_parts:
+             scene_prompt = "\n\n".join(prefix_parts) + "\n\n" + scene_prompt
+ 
+         scene_prompt += f"\n\nIMPORTANT: Begin the scene with the title: **{scene_title}**"
+ 
+         scene_content = self.llm_client.generate_content(scene_prompt, max_tokens=2000)
+         if not scene_content:
+             self.logger.warning("Empty scene content for ch%d scene %d.", chapter_number, scene.scene_number)
+@@ -257,21 +308,22 @@ class ChapterWriterAgent(Agent):
+         self.logger.info(
+             "Scene %s quality %.3f < %.2f — attempting rewrite.", label, report.overall_score, _QUALITY_REWRITE_THRESHOLD
+         )
+         console.print(
+             f"  [yellow]Quality {report.overall_score:.2f} < {_QUALITY_REWRITE_THRESHOLD} — rewriting scene {scene_number}...[/yellow]"
+         )
+ 
+         # Build concise problem list from lowest-scoring axes
+-        low_axes = sorted(report.axes, key=lambda a: a.score)[:3]
++        low_axes = sorted(
++            [a for a in report.axes if a.score < _QUALITY_REWRITE_THRESHOLD],
++            key=lambda a: a.score,
++        )
+         problem_lines: list[str] = []
+         for axis in low_axes:
+-            if axis.score >= _QUALITY_REWRITE_THRESHOLD:
+-                break
+             problem_lines.append(f"- {axis.name} (score {axis.score:.2f}): {axis.recommendation}")
+             for excerpt in axis.flagged_excerpts[:2]:
+                 problem_lines.append(f'  Example to rewrite: "{excerpt}"')
+ 
+         if not problem_lines:
+             return scene_content
+ 
+         rewrite_prompt = _REWRITE_PROMPT.format(
+diff --git a/src/libriscribe/agents/outliner.py b/src/libriscribe/agents/outliner.py
+index d4c5be3..fd30596 100644
+--- a/src/libriscribe/agents/outliner.py
++++ b/src/libriscribe/agents/outliner.py
+@@ -21,37 +21,74 @@ class OutlinerAgent(Agent):
+ 
+     def __init__(self, llm_client: LLMClient):
+         super().__init__("OutlinerAgent", llm_client)
+ 
+     def execute(self, project_knowledge_base: ProjectKnowledgeBase, output_path: Optional[str] = None) -> None:
+         """Generates a chapter outline and then iterates to generate scene outlines."""
+         try:
+             # --- Step 1: Determine max chapters based on book length FIRST ---
+-            max_chapters = self._get_max_chapters(project_knowledge_base.book_length)
++            max_chapters = self._get_max_chapters(project_knowledge_base)
+ 
+             # Enhance the prompt with explicit chapter count instruction
+             if project_knowledge_base.book_length == "Short Story":
+                 initial_prompt = prompts.OUTLINE_PROMPT.format(**project_knowledge_base.model_dump())
+                 initial_prompt += f"\n\nIMPORTANT: This is a SHORT STORY. Generate EXACTLY {max_chapters} chapters. Do not exceed this limit."
+             elif project_knowledge_base.book_length == "Novella":
+                 initial_prompt = prompts.OUTLINE_PROMPT.format(**project_knowledge_base.model_dump())
+                 initial_prompt += f"\n\nIMPORTANT: This is a NOVELLA. Generate EXACTLY {max_chapters} chapters. Do not exceed this limit."
+             else:
+                 initial_prompt = prompts.OUTLINE_PROMPT.format(**project_knowledge_base.model_dump())
+                 initial_prompt += f"\n\nIMPORTANT: Generate at most {max_chapters} chapters."
+ 
++            # Task 10: Append user's chapter count preference to prompt
++            num_ch = project_knowledge_base.num_chapters
++            num_ch_str = project_knowledge_base.get("num_chapters_str", "")
++            if num_ch_str and str(num_ch_str) not in ("0", ""):
++                ch_hint = f"\nAuthor's preferred chapter count: {num_ch_str}."
++            elif isinstance(num_ch, int) and num_ch > 0:
++                ch_hint = f"\nAuthor's preferred chapter count: {num_ch}."
++            elif isinstance(num_ch, tuple) and len(num_ch) == 2:
++                ch_hint = f"\nAuthor's preferred chapter count: {num_ch[0]}-{num_ch[1]}."
++            else:
++                ch_hint = ""
++            if ch_hint:
++                initial_prompt += ch_hint
++
++            # Task 3: Append advanced-mode author notes to prompt
++            _ADVANCED_FIELDS = [
++                ("inspired_by", "Inspired by"),
++                ("author_experience", "Author experience"),
++                ("key_takeaways", "Key takeaways"),
++                ("case_studies", "Includes case studies"),
++                ("actionable_advice", "Includes actionable advice"),
++                ("marketing_focus", "Marketing focus"),
++                ("sales_focus", "Sales focus"),
++                ("research_question", "Research question"),
++                ("hypothesis", "Hypothesis"),
++                ("methodology", "Methodology"),
++            ]
++            notes = []
++            for field, label in _ADVANCED_FIELDS:
++                val = project_knowledge_base.get(field)
++                if val is not None and val is not False and str(val).strip():
++                    notes.append(f"  - {label}: {val}")
++            if notes:
++                initial_prompt += "\n\nAuthor notes (incorporate into structure):\n" + "\n".join(notes)
++
+             console.print("📝 [cyan]Creating chapter outline...[/cyan]")
+             initial_outline = self.llm_client.generate_content(initial_prompt, max_tokens=3000, temperature=0.5)
+             if not initial_outline:
+                 logger.error("Initial outline generation failed.")
+                 return
+ 
+             # Process outline with max_chapters limit already included in prompt
+             self.process_outline(project_knowledge_base, initial_outline, max_chapters)
++            # Task 11: Enforce chapter limit (trim any excess chapters the LLM may have generated)
++            self._enforce_chapter_limit(project_knowledge_base, max_chapters)
+ 
+             # Save the overall outline first
+             if output_path is None:
+                 project_dir = project_knowledge_base.project_dir
+                 if project_dir is None:
+                     logger.error("project_dir is not set on knowledge base; cannot save outline.")
+                     return
+                 output_path = str(Path(project_dir) / "outline.md")
+@@ -85,24 +122,37 @@ class OutlinerAgent(Agent):
+                 console.print(f"Scene outlines saved to: {scenes_path}")
+ 
+             self.logger.info("Outline and scenes generated and saved to knowledge base and %s", output_path)
+ 
+         except Exception:
+             self.logger.exception("Error generating outline")
+             console.print("[red]ERROR:[/red] Failed to generate outline. See log for details.")
+ 
+-    def _get_max_chapters(self, book_length: str) -> int:
+-        """Determine the maximum number of chapters based on book length."""
+-        if book_length == "Short Story":
+-            return 2
+-        elif book_length == "Novella":
+-            return 8
++    def _get_max_chapters(self, project_knowledge_base: ProjectKnowledgeBase) -> int:
++        """Determine the maximum number of chapters based on book length and user preference."""
++        pkb = project_knowledge_base
++        if pkb.book_length == "Short Story":
++            length_max = 2
++        elif pkb.book_length == "Novella":
++            length_max = 8
++        else:
++            length_max = 20
++
++        num_ch = pkb.num_chapters
++        if isinstance(num_ch, tuple) and len(num_ch) == 2:
++            user_max = max(num_ch)
++        elif isinstance(num_ch, int) and num_ch > 0:
++            user_max = num_ch
+         else:
+-            return 20
++            user_max = None
++
++        if user_max is not None:
++            return min(user_max, length_max)
++        return length_max
+ 
+     def _enforce_chapter_limit(self, project_knowledge_base: ProjectKnowledgeBase, max_chapters: int) -> None:
+         """Limit the number of chapters in the knowledge base to max_chapters."""
+         current_chapters = len(project_knowledge_base.chapters)
+         if current_chapters > max_chapters:
+             logger.info("Limiting chapters from %d to %d", current_chapters, max_chapters)
+             console.print(f"[yellow]Trimming outline to {max_chapters} chapters for {project_knowledge_base.book_length}[/yellow]")
+ 
+@@ -112,23 +162,28 @@ class OutlinerAgent(Agent):
+                 if i in project_knowledge_base.chapters
+             }
+             project_knowledge_base.chapters = chapters_to_keep
+             project_knowledge_base.num_chapters = max_chapters
+ 
+     def generate_scene_outline(self, project_knowledge_base: ProjectKnowledgeBase, chapter: Chapter) -> bool:
+         """Generates the scene outline for a single chapter."""
+         try:
++            dq = project_knowledge_base.dynamic_questions
++            dq_note = ""
++            if dq:
++                dq_lines = "\n".join(f"  - {q}: {a}" for q, a in dq.items())
++                dq_note = f"\n\nGenre-specific author details:\n{dq_lines}"
+             scene_prompt = f"""
+             Create a detailed outline for the scenes in Chapter {chapter.chapter_number}: {chapter.title}
+             of a {project_knowledge_base.genre} book titled "{project_knowledge_base.title}"
+             which is categorized as {project_knowledge_base.category}.
+             The book should be written in {project_knowledge_base.language}.
+ 
+-            Book Description: {project_knowledge_base.description}
++            Book Description: {project_knowledge_base.description}{dq_note}
+ 
+             Chapter Summary: {chapter.summary}
+ 
+             The outline should include a breakdown of 3-6 scenes for this chapter, with EACH scene having:
+             * Scene Number: (e.g., Scene 1, Scene 2, etc.)
+             * Summary: (A short description of what happens in the scene, 1-2 sentences)
+             * Characters: (A list of the characters involved, separated by commas)
+             * Setting: (Where the scene takes place)
+@@ -151,16 +206,37 @@ class OutlinerAgent(Agent):
+                 * Goal: [Scene goal]
+                 * Emotional Beat: [Scene emotional beat]
+ 
+             [Repeat for each scene, maintaining the exact same bullet point format]
+ 
+             Be sure to include all main characters relevant to this chapter and create a natural flow between scenes.
+             """
+ 
++            # Task 3: Append advanced-mode author notes to scene prompt
++            _ADVANCED_FIELDS = [
++                ("inspired_by", "Inspired by"),
++                ("author_experience", "Author experience"),
++                ("key_takeaways", "Key takeaways"),
++                ("case_studies", "Includes case studies"),
++                ("actionable_advice", "Includes actionable advice"),
++                ("marketing_focus", "Marketing focus"),
++                ("sales_focus", "Sales focus"),
++                ("research_question", "Research question"),
++                ("hypothesis", "Hypothesis"),
++                ("methodology", "Methodology"),
++            ]
++            notes = []
++            for field, label in _ADVANCED_FIELDS:
++                val = project_knowledge_base.get(field)
++                if val is not None and val is not False and str(val).strip():
++                    notes.append(f"  - {label}: {val}")
++            if notes:
++                scene_prompt += "\n\nAuthor notes (maintain consistency with these):\n" + "\n".join(notes)
++
+             console.print(f"  Generating Scene Outline for Chapter {chapter.chapter_number}...")
+             scene_outline_md = self.llm_client.generate_content(scene_prompt, max_tokens=2000, temperature=0.5)
+             if not scene_outline_md:
+                 logger.error("Scene outline generation failed for Chapter %d.", chapter.chapter_number)
+                 return False
+ 
+             chapter.scenes = []
+ 
+@@ -340,17 +416,17 @@ class OutlinerAgent(Agent):
+                 while j < len(lines) and not (
+                     lines[j].strip().startswith("Chapter") or "Chapter List" in lines[j]
+                 ):
+                     if lines[j].strip():
+                         book_summary_lines.append(lines[j].strip())
+                     j += 1
+ 
+                 if book_summary_lines:
+-                    project_knowledge_base.description = "\n".join(book_summary_lines)
++                    pass
+ 
+             elif current_chapter and ("Summary" in line or line.startswith("Summary")):
+                 current_section = "summary"
+                 current_content = []
+                 continue
+ 
+             elif current_chapter and ("Key Events" in line or "Plot Points" in line):
+                 if current_content:
+diff --git a/src/libriscribe/utils/prompts_context.py b/src/libriscribe/utils/prompts_context.py
+index b336936..2670c4e 100644
+--- a/src/libriscribe/utils/prompts_context.py
++++ b/src/libriscribe/utils/prompts_context.py
+@@ -189,16 +189,19 @@ Scene 2:
+ Ensure there are approximately 3-6 scenes, adjusting for the chapter's complexity. Do not create excessively long or short chapters.
+ 
+ IMPORTANT: The content should be written entirely in {language}.
+ """
+ 
+ OUTLINE_PROMPT = """
+ Create a structured outline for a {genre} book titled "{title}" which is categorized as {category}.
+ The book is written in {language}.
++Tone: {tone}
++Target audience: {target_audience}
++Logline: {logline}
+ 
+ Description: {description}
+ 
+ IMPORTANT: Format your response EXACTLY as shown below, with consistent header formatting and numbering:
+ If there's a book length: ({book_length}), adjust the number of chapters accordingly.
+ 
+ # Book Summary
+ [Write a brief summary of the entire book here, 2-3 paragraphs]
+@@ -377,16 +380,18 @@ Table of Contents (Optional): If requested, generate a table of contents with li
+ Output: Return the complete book manuscript in Markdown format.
+ 
+ 
+ """
+ 
+ SCENE_PROMPT = """
+ Write Scene {scene_number} of {total_scenes} for Chapter {chapter_number}: {chapter_title} of the {genre} {category} book "{book_title}".
+ The book is written in {language}.
++Tone: {tone}
++Target audience: {target_audience}
+ 
+ Chapter Summary:
+ {chapter_summary}
+ 
+ Scene Details:
+ - Summary: {scene_summary}
+ - Characters: {characters}
+ - Setting: {setting}

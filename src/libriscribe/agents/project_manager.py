@@ -464,7 +464,27 @@ class ProjectManagerAgent:
             pacing_guidance = ""
             if pacing_report is not None:
                 pacing_guidance = PacingAgent.get_editor_guidance(pacing_report)
-            self.edit_chapter(chapter_number, pacing_guidance=pacing_guidance)
+
+            quality_guidance = ""
+            quality_agent = cast(Any, self.agents.get("content_quality"))
+            if quality_agent is not None and self.project_knowledge_base:
+                quality_report = quality_agent.execute(
+                    project_knowledge_base=self.project_knowledge_base,
+                    chapter_number=chapter_number,
+                )
+                if quality_report is not None:
+                    quality_guidance = (
+                        f"PROSE QUALITY FINDINGS (address in your edit):\n"
+                        f"Overall score: {quality_report.overall_score:.2f}/1.0\n"
+                        f"Priority fix: {quality_report.priority_fix}\n"
+                        + "\n".join(
+                            f"- {ax.name} ({ax.score:.2f}): {ax.recommendation}"
+                            for ax in quality_report.axes
+                            if ax.score < 0.7
+                        )
+                    )
+
+            self.edit_chapter(chapter_number, pacing_guidance=pacing_guidance, quality_guidance=quality_guidance)
             self.edit_style(chapter_number)
         elif (
             self.project_knowledge_base
@@ -482,9 +502,9 @@ class ProjectManagerAgent:
             if typer.confirm("Do you want AI to refine the writing style?"):
                 self.edit_style(chapter_number)
 
-    def edit_chapter(self, chapter_number: int, pacing_guidance: str = "") -> None:
+    def edit_chapter(self, chapter_number: int, pacing_guidance: str = "", quality_guidance: str = "") -> None:
         """Refines an existing chapter (Editor Agent)."""
-        self.run_agent("editor", chapter_number=chapter_number, pacing_guidance=pacing_guidance)
+        self.run_agent("editor", chapter_number=chapter_number, pacing_guidance=pacing_guidance, quality_guidance=quality_guidance)
         self.save_project_data()
 
     def run_pacing_analysis(self, chapter_numbers: list[int]) -> "PacingReport | None":

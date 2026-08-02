@@ -6,6 +6,7 @@ from pathlib import Path
 from libriscribe.agents.agent_base import Agent
 from libriscribe.utils.llm_client import LLMClient
 from libriscribe.utils.file_utils import read_markdown_file, write_markdown_file
+from libriscribe.utils.prompts_context import format_style_profile_block
 
 from libriscribe.knowledge_base import ProjectKnowledgeBase
 from rich.console import Console
@@ -29,10 +30,11 @@ class StyleEditorAgent(Agent):
             print(f"ERROR: Chapter file is empty or not found: {chapter_path}")
             return
 
-        # Get tone and target_audience with default values if not present
         tone = getattr(project_knowledge_base, 'tone', 'Informative')
         target_audience = getattr(project_knowledge_base, 'target_audience', 'General')
-        
+
+        style_block = format_style_profile_block(project_knowledge_base.style_profile)
+
         console.print(f"🎨 [cyan]Polishing writing style for Chapter {chapter_number}...[/cyan]")
         prompt = f"""
         You are a style editor. Refine the writing style of the following chapter excerpt...
@@ -40,7 +42,10 @@ class StyleEditorAgent(Agent):
         Target Tone: {tone}
         Target Audience: {target_audience}
         Language: {project_knowledge_base.language}
-
+        """
+        if style_block:
+            prompt += f"\n{style_block}\n"
+        prompt += """
         Make specific suggestions for changes, and then provide the REVISED text within a Markdown code block.
 
         ```markdown
@@ -49,9 +54,9 @@ class StyleEditorAgent(Agent):
 
         Chapter Excerpt:
         ---
-        {chapter_content}
+        """ + chapter_content + """
         ---
-        """  # Added Markdown code block
+        """
         try:
             response = self.llm_client.generate_content(prompt, max_tokens=32000)
             
