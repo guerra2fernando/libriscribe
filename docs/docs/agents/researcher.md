@@ -133,3 +133,15 @@ Customizable for:
 - Implements rate limiting
 - Follows scraping ethics
 - Maintains attribution
+
+## Downstream Usage in Chapter Writing
+
+The `research_results.md` file produced by this agent is automatically read by the **Chapter Writer Agent** when generating each scene. The first 1 200 characters are injected as a `RESEARCH CONTEXT` block in the scene prompt, providing the LLM with factual grounding from your research.
+
+Run the Researcher before or during chapter writing for best results:
+
+```bash
+libriscribe research "your research topic here"
+```
+
+The research file persists across sessions — re-run to update it with new findings. See [Chapter Writer Agent](chapter-writer.md) for details on how it is used.

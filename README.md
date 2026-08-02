@@ -58,6 +58,10 @@ graph TD
     CQA -. Option B rewrite loop .-> CW
     CQA -. saves .-> QR[(quality_chapter_N.json)]
 
+    CW --> PA[Pacing Agent]
+    PA -. PACING GUIDANCE .-> ED
+    PA -. saves .-> PR[(pacing_report.json)]
+
     CW & ED --> LLM[Unified LLM Client]
     LLM --> CT[Cost Tracker]
     CT --> Log[(llm_usage.jsonl)]
@@ -72,6 +76,7 @@ graph TD
     style NGB fill:#7C3AED,stroke:#6D28D9,color:#FFFFFF,stroke-width:2px
     style CQA fill:#7C3AED,stroke:#6D28D9,color:#FFFFFF,stroke-width:2px
     style SR fill:#D97706,stroke:#B45309,color:#FFFFFF,stroke-width:2px
+    style PA fill:#0891B2,stroke:#0E7490,color:#FFFFFF,stroke-width:2px
 ```
 
 ---
@@ -123,6 +128,7 @@ graph TD
 *   **InvariantChecker:** Before each scene is generated, hard and soft invariant violations are detected (dead characters reappearing, injured limbs performing physical actions, destroyed locations revisited) and injected as `NARRATIVE CONSTRAINTS:` into the scene prompt — zero extra user steps.
 *   **ContentQualityAgent — Preventive (Option A):** Reads `quality_chapter_{N-1}.json` before writing chapter N and injects a `STYLE CONSTRAINTS:` block into every scene prompt, listing patterns to avoid from the prior chapter (clichés, tell-not-show phrases, etc.).
 *   **ContentQualityAgent — Reactive (Option B):** After each scene is generated, scores it across 5 quality axes. If the overall score is below 0.65, fires one targeted rewrite pass preserving all plot facts while fixing only the flagged issues.
+*   **PacingAgent:** After each chapter is written, analyses all chapters written so far across 5 arc axes (tension escalation, act structure, chapter length consistency, emotional beat variety, narrative momentum). Axes scoring below 0.70 produce a `PACING GUIDANCE:` block prepended to the Editor Agent prompt, directing targeted arc fixes during the editing pass.
 
 ### 6. Local Retrieval & Knowledge Search 🔍
 *   **Automatic Parsing & Chunking:** Auto-extracts character profiles, worldbuilding, summaries, and full chapters into searchable tokens.
@@ -390,6 +396,7 @@ All global execution costs and API calls are written directly to your workspace:
 - [x] **ContentQualityAgent — 5-Axis Prose Scoring**: cliche density, show-don't-tell, dialogue voice, sentence variety, scene function
 - [x] **Option A — Preventive Style Injection**: Prior-chapter quality flags injected into next chapter prompts
 - [x] **Option B — Reactive Rewrite Loop**: Per-scene inline rewrite when quality score < 0.65
+- [x] **PacingAgent — 5-Axis Arc Analysis**: tension escalation, act structure, chapter length consistency, emotional beat variety, narrative momentum; PACING GUIDANCE injected into editor prompt
 - [x] **Narrative CLI**: `narrative rebuild`, `narrative check`, `quality` commands
 
 ### 🔍 Vector Store & Search Enhancement

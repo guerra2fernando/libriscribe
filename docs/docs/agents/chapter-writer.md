@@ -102,6 +102,20 @@ When writing chapter 1 and the narrative graph is empty, character trait facts a
 
 `SCENE_PROMPT.format(...)` now passes `tone` and `target_audience` from the PKB so the LLM respects the author's intended register from the first scene.
 
+### Research Context in Scene Prompts
+
+If `research_results.md` exists in the project directory (produced by the **Researcher Agent**), its first 1 200 characters are injected as a `RESEARCH CONTEXT (relevant background for this scene):` block prepended to every scene prompt. The content is truncated to avoid displacing other context blocks. If the file is absent, the block is silently skipped.
+
+Run the Researcher before starting chapter writing to give every scene factual grounding:
+
+```bash
+libriscribe research "your research topic here"
+```
+
+### Pacing Guidance in Editor Prompt
+
+After all scenes for a chapter are written, the AI-review pipeline runs the **Pacing Agent** across all chapters written so far. Any axes scoring below 0.70 produce a `PACING GUIDANCE:` block prepended to the Editor Agent's prompt, directing it to address cross-chapter arc problems during this editing pass. See [Pacing Agent](pacing-agent.md) for full details.
+
 ## Output Format
 
 ```markdown
