@@ -76,6 +76,21 @@ class ChapterWriterAgent(Agent):
 
             # Load narrative graph for InvariantChecker
             narrative_graph = self._load_narrative_graph(project_dir, project_knowledge_base.project_name)
+            # Seed Ch1 graph with character facts so InvariantChecker has context from the start
+            if not narrative_graph.facts and project_knowledge_base.characters:
+                from libriscribe.narrative.models import NarrativeFact
+                for char in project_knowledge_base.characters.values():
+                    fact_id = NarrativeFact.make_id(char.name, "has_traits", char.personality_traits or "")
+                    narrative_graph.facts.append(NarrativeFact(
+                        fact_id=fact_id,
+                        entity=char.name,
+                        entity_type="character",
+                        predicate="has_traits",
+                        value=(char.personality_traits or "")[:200],
+                        chapter=0,
+                        evidence_quote=f"Character profile: {char.role or 'unknown role'}",
+                        negated=False,
+                    ))
             checker = InvariantChecker(narrative_graph)
 
             # Option A: build style hints from prior chapter quality report
@@ -218,7 +233,36 @@ class ChapterWriterAgent(Agent):
         if dq:
             dq_lines = "\n".join(f"  - {q}: {a}" for q, a in dq.items())
             dq_block = "GENRE-SPECIFIC AUTHOR DETAILS:\n" + dq_lines
-        prefix_parts = [p for p in [constraint_block, style_block, dq_block] if p]
+        # Task 5: Inject character profiles for scene characters
+        char_profiles: list[str] = []
+        for name in (scene.characters or []):
+            char = project_knowledge_base.get_character(name)
+            if char:
+                char_profiles.append(
+                    f"- {char.name} ({char.role}): {char.personality_traits}. "
+                    f"Background: {char.background[:120] if char.background else 'N/A'}. "
+                    f"Arc: {char.character_arc[:80] if char.character_arc else 'N/A'}."
+                )
+        char_profiles_block = ""
+        if char_profiles:
+            char_profiles_block = "CHARACTER PROFILES (keep consistent):\n" + "\n".join(char_profiles)
+
+        # Task 7: Inject worldbuilding context
+        worldbuilding_block = ""
+        wb = project_knowledge_base.worldbuilding
+        if wb:
+            wb_parts: list[str] = []
+            for attr in ["geography", "key_locations", "magic_system", "culture_and_society",
+                         "technology_level", "setting_context", "key_concepts", "industry_overview"]:
+                val = getattr(wb, attr, None)
+                if val and isinstance(val, str) and val.strip():
+                    label = attr.replace("_", " ").title()
+                    snippet = val[:200].rstrip()
+                    wb_parts.append(f"  {label}: {snippet}...")
+            if wb_parts:
+                worldbuilding_block = "WORLD CONTEXT (maintain consistency):\n" + "\n".join(wb_parts)
+
+        prefix_parts = [p for p in [constraint_block, style_block, dq_block, char_profiles_block, worldbuilding_block] if p]
         if prefix_parts:
             scene_prompt = "\n\n".join(prefix_parts) + "\n\n" + scene_prompt
 
@@ -269,11 +313,12 @@ class ChapterWriterAgent(Agent):
         )
 
         # Build concise problem list from lowest-scoring axes
-        low_axes = sorted(report.axes, key=lambda a: a.score)[:3]
+        low_axes = sorted(
+            [a for a in report.axes if a.score < _QUALITY_REWRITE_THRESHOLD],
+            key=lambda a: a.score,
+        )
         problem_lines: list[str] = []
         for axis in low_axes:
-            if axis.score >= _QUALITY_REWRITE_THRESHOLD:
-                break
             problem_lines.append(f"- {axis.name} (score {axis.score:.2f}): {axis.recommendation}")
             for excerpt in axis.flagged_excerpts[:2]:
                 problem_lines.append(f'  Example to rewrite: "{excerpt}"')
