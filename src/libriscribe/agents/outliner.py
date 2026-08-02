@@ -345,7 +345,7 @@ class OutlinerAgent(Agent):
                     j += 1
 
                 if book_summary_lines:
-                    project_knowledge_base.description = "\n".join(book_summary_lines)
+                    pass
 
             elif current_chapter and ("Summary" in line or line.startswith("Summary")):
                 current_section = "summary"
