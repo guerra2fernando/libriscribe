@@ -1,8 +1,9 @@
 # src/libriscribe/retrieval/cross_reference.py
 
 import json
+import re
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Dict, List
 from libriscribe.retrieval.models import RetrievalChunk, CrossReferenceEntry
 
 
@@ -41,7 +42,6 @@ class CrossReferenceIndex:
                     continue
 
                 # Case-insensitive word boundary check
-                import re
                 pattern = r"\b" + re.escape(name) + r"\b"
                 if re.search(pattern, chunk_text, re.IGNORECASE):
                     found_entities_in_chunk.append(name)

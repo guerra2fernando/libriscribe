@@ -1,6 +1,6 @@
 """Cost tracking for LLM API usage."""
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
 class CostTracker:
     """Track LLM usage and costs."""
@@ -22,7 +22,7 @@ class CostTracker:
                   cost: float = 0.0) -> None:
         """Log LLM usage to JSONL file."""
         entry = {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "provider": provider,
             "model": model,
             "operation": operation,

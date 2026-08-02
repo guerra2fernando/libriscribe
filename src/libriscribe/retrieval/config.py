@@ -1,9 +1,11 @@
 # src/libriscribe/retrieval/config.py
 
 import json
+import logging
 from pathlib import Path
-from typing import Any, Dict
 from libriscribe.retrieval.models import RetrievalConfig
+
+logger = logging.getLogger(__name__)
 
 
 def get_retrieval_dir(project_dir: Path, config: RetrievalConfig) -> Path:
@@ -21,8 +23,8 @@ def load_retrieval_config(project_dir: Path) -> RetrievalConfig:
             with open(config_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 return RetrievalConfig.model_validate(data)
-        except Exception:
-            pass
+        except (json.JSONDecodeError, OSError) as e:
+            logger.warning("Could not load retrieval config from %s: %s", config_path, e)
     return default_config
 
 

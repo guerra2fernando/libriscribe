@@ -32,9 +32,9 @@ class DocumentBuilder:
             locs_text = kb.worldbuilding.key_locations or ""
             # Simple line or comma splits
             self.all_locations = [
-                l.strip()
-                for l in locs_text.replace("\n", ",").split(",")
-                if l.strip()
+                loc.strip()
+                for loc in locs_text.replace("\n", ",").split(",")
+                if loc.strip()
             ]
 
     def build_all(self) -> list[RetrievalDocument]:

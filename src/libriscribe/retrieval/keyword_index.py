@@ -167,7 +167,7 @@ class KeywordIndex:
                 if "characters" in filters:
                     req_chars = filters["characters"]
                     if isinstance(req_chars, list):
-                        if not any(rc in chunk.characters for req_char in req_chars for rc in [req_char]):
+                        if not any(req_char in chunk.characters for req_char in req_chars):
                             match = False
                     elif req_chars not in chunk.characters:
                         match = False

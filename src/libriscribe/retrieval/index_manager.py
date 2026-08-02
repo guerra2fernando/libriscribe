@@ -3,18 +3,21 @@ from __future__ import annotations
 # src/libriscribe/retrieval/index_manager.py
 
 import json
+import logging
 from pathlib import Path
-from typing import Dict, List, Tuple, TYPE_CHECKING
+from typing import Dict, List, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from libriscribe.knowledge_base import ProjectKnowledgeBase
 
 from libriscribe.retrieval.config import get_retrieval_dir
 from libriscribe.retrieval.models import RetrievalDocument, RetrievalChunk, RetrievalConfig
-from libriscribe.retrieval.document_builder import DocumentBuilder, compute_sha256
+from libriscribe.retrieval.document_builder import DocumentBuilder
 from libriscribe.retrieval.chunking import chunk_document
 from libriscribe.retrieval.keyword_index import KeywordIndex
 from libriscribe.retrieval.cross_reference import CrossReferenceIndex
+
+logger = logging.getLogger(__name__)
 
 
 class IndexManager:
@@ -90,7 +93,8 @@ class IndexManager:
             with open(self.manifest_file, "r", encoding="utf-8") as f:
                 manifest = json.load(f)
             stored_hashes = manifest.get("hashes", {})
-        except Exception:
+        except (json.JSONDecodeError, OSError) as e:
+            logger.warning("Could not load manifest: %s", e)
             stored_hashes = {}
 
         # Compare hashes of current docs against stored hashes
@@ -124,7 +128,7 @@ class IndexManager:
         # Worldbuilding locations
         if self.kb.worldbuilding and hasattr(self.kb.worldbuilding, "key_locations"):
             locs_text = self.kb.worldbuilding.key_locations or ""
-            locations = [l.strip() for l in locs_text.replace("\n", ",").split(",") if l.strip()]
+            locations = [loc.strip() for loc in locs_text.replace("\n", ",").split(",") if loc.strip()]
             for loc in locations:
                 defs[loc] = "location"
 

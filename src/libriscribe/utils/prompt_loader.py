@@ -21,7 +21,7 @@ class PromptLoader:
         if not template_path.exists():
             raise FileNotFoundError(f"Prompt template not found: {template_path}")
         
-        with open(template_path, 'r') as f:
+        with open(template_path, 'r', encoding='utf-8') as f:
             prompt_data = yaml.safe_load(f)
         
         self._cache[prompt_name] = prompt_data

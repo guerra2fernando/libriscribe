@@ -1,4 +1,5 @@
 # src/libriscribe/agents/concept_generator.py
+import json
 import logging
 from typing import Optional
 
@@ -42,11 +43,11 @@ class ConceptGeneratorAgent(Agent):
                     - "description": A short description (around 100-150 words).
 
                     ```json
-                    {{{{
+                    {{
                         "title": "...",
                         "logline": "...",
                         "description": "..."
-                    }}}}
+                    }}
                     ```"""
             else:
                 initial_prompt = f"""Generate a book concept for a {project_knowledge_base.genre} {project_knowledge_base.category} ({project_knowledge_base.book_length}).
@@ -60,11 +61,11 @@ class ConceptGeneratorAgent(Agent):
                 - "description": A description (around 200 words).
 
                 ```json
-                {{{{{{{{
+                {{
                     "title": "...",
                     "logline": "...",
                     "description": "..."
-                }}}}}}}}
+                }}
                 ```"""
 
             console.print("🧠 [cyan]Generating initial concept...[/cyan]")
@@ -82,13 +83,14 @@ class ConceptGeneratorAgent(Agent):
                 return None
 
             # --- Step 2: Critique the Concept ---
+            initial_concept_str = json.dumps(initial_concept_json, indent=2)
             critique_prompt = f"""Critique the following book concept:
 
             ```json
-            {{{{json.dumps(initial_concept_json)}}}}
+            {initial_concept_str}
             ```
             The book should be written in {project_knowledge_base.language}.
-           
+
             Evaluate:
             - **Title:** Is it compelling and relevant?
             - **Logline:** Is it concise and does it capture the core conflict?
@@ -106,7 +108,7 @@ class ConceptGeneratorAgent(Agent):
 
             Original Concept:
             ```json
-            {{{{json.dumps(initial_concept_json)}}}}
+            {initial_concept_str}
             ```
 
             Critique:
@@ -114,11 +116,11 @@ class ConceptGeneratorAgent(Agent):
 
             Return the REFINED concept as a JSON object within a Markdown code block:
              ```json
-            {{{{{{{{
+            {{
                 "title": "...",
                 "logline": "...",
                 "description": "..."
-            }}}}}}}}
+            }}
             ```
             """
             console.print("✨ [cyan]Refining concept...[/cyan]")

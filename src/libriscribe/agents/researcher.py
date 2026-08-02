@@ -74,8 +74,8 @@ class ResearcherAgent(Agent):
             headers = {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
             }
-            url = f"https://www.google.com/search?q={query}&num={num_results}"
-            response = requests.get(url, headers=headers)
+            url = "https://www.google.com/search"
+            response = requests.get(url, headers=headers, params={"q": query, "num": num_results})
             response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
 
             soup = BeautifulSoup(response.text, "html.parser")

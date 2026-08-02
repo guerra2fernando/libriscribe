@@ -55,10 +55,6 @@ def write_json_file(
         Path(file_path).parent.mkdir(parents=True, exist_ok=True)
         with open(file_path, "w", encoding="utf-8") as f:
             if isinstance(data, BaseModel):
-                json.dump(
-                    data.model_dump(), f, indent=4
-                )  # Use model_dump for Pydantic models
-            elif isinstance(data, ProjectKnowledgeBase):
                 json.dump(data.model_dump(), f, indent=4)
             else:
                 json.dump(data, f, indent=4)

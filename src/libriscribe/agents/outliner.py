@@ -250,7 +250,7 @@ class OutlinerAgent(Agent):
             
         return scene_sections
 
-    def _extract_scene_data(self, scene_section: str, default_scene_number: int) -> dict:
+    def _extract_scene_data(self, scene_section: str, default_scene_number: int) -> dict | None:
         """Extract scene data from a scene section."""
         scene_data = {
             "scene_number": default_scene_number,
@@ -621,17 +621,17 @@ class OutlinerAgent(Agent):
             logger.warning("No chapters found in outline")
             default_chapter = Chapter(
                 chapter_number=1,
-                title="Shadow's Discovery",
-                summary="Shade, a daemon eking out a meager existence in the polluted shadows of Neo-London, stumbles upon a pulsating dragon egg during a scavenging run. He grapples with whether to protect it or preserve his anonymity."
+                title="Chapter 1",
+                summary="Opening chapter."
             )
             # Add a default scene
             default_scene = Scene(
-                scene_number=1, 
-                summary="Shade discovers the dragon egg in an abandoned research facility.",
-                characters=["Shade"],
-                setting="Abandoned research facility in Neo-London",
-                goal="Introduce the protagonist and the discovery that changes everything",
-                emotional_beat="Wonder mixed with apprehension"
+                scene_number=1,
+                summary="Opening scene.",
+                characters=[],
+                setting="",
+                goal="",
+                emotional_beat=""
             )
             default_chapter.scenes.append(default_scene)
             
