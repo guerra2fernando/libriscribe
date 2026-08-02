@@ -84,7 +84,7 @@ graph TD
 ## ✨ Features
 
 ### 1. Unified LLM & OpenRouter Routing 🤖
-*   **Multi-Provider Support:** Run on **OpenAI**, **Anthropic Claude**, **Google Gemini**, **DeepSeek**, **Mistral**, or any provider supported by **OpenRouter**.
+*   **Multi-Provider Support:** Run on **OpenAI**, **Anthropic Claude**, **Google Gemini**, **DeepSeek**, **Mistral**, **OpenRouter**, **AWS Bedrock**, or **Bedrock Mantle**.
 *   **Intelligent Auto-Formatting:** Built-in JSON post-processing wrapper guarantees clean responses when routing through diverse models.
 *   **Full Backward Compatibility:** Swap models dynamically without breaking existing templates or agent behaviors.
 
@@ -168,6 +168,18 @@ MISTRAL_MODEL=mistral-medium-latest
 OPENROUTER_API_KEY=your_openrouter_key_here
 OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
 OPENROUTER_MODEL=anthropic/claude-3-haiku
+
+# AWS Bedrock (explicit keys optional — falls back to instance profile / env AWS_* vars)
+BEDROCK_REGION=us-east-1
+BEDROCK_MODEL=us.anthropic.claude-sonnet-4-6-20251001-v1:0
+BEDROCK_ACCESS_KEY_ID=your_access_key_id
+BEDROCK_SECRET_ACCESS_KEY=your_secret_access_key
+# BEDROCK_SESSION_TOKEN=your_session_token  # only needed for temporary credentials
+
+# Bedrock Mantle
+BEDROCK_MANTLE_API_KEY=your_api_key_here
+BEDROCK_MANTLE_BASE_URL=https://bedrock-mantle.us-east-1.api.aws/v1
+BEDROCK_MANTLE_MODEL=qwen.qwen3-coder-next
 
 # Optional global fallback chain
 # Entries may be provider names (use that provider's .env default),
@@ -377,7 +389,7 @@ All global execution costs and API calls are written directly to your workspace:
 ## 🗺️ LibriScribe Development Roadmap
 
 ### 🤖 LLM Integration & Support
-- [x] **Multi-LLM Support**: Anthropic Claude, Google Gemini, DeepSeek, Mistral, OpenAI
+- [x] **Multi-LLM Support**: Anthropic Claude, Google Gemini, DeepSeek, Mistral, OpenAI, AWS Bedrock, Bedrock Mantle
 - [x] **Unified OpenRouter Gateway Integration**
 - [x] **Cost Optimization Engine** (`llm_usage.jsonl` tracking + local manuscript compilation)
 - [x] **Response Quality & Self-Healing JSON Parser**

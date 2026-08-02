@@ -17,6 +17,8 @@ This guide walks you through installing LibriScribe, configuring model defaults,
   - **Google AI Studio (Gemini):** [Get API Key](https://aistudio.google.com/)
   - **Mistral AI:** [Get API Key](https://console.mistral.ai/)
   - **OpenRouter:** [Get API Key](https://openrouter.ai/)
+  - **AWS Bedrock:** AWS account with Bedrock access (explicit keys or instance profile / env `AWS_*` vars)
+  - **Bedrock Mantle:** API key from your Bedrock Mantle account
 
 ## Installation Steps
 
@@ -66,6 +68,17 @@ This guide walks you through installing LibriScribe, configuring model defaults,
    OPENROUTER_API_KEY=your_openrouter_key_here
    OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
    OPENROUTER_MODEL=anthropic/claude-3-haiku
+
+   # AWS Bedrock (explicit keys optional — falls back to instance profile / env AWS_* vars)
+   BEDROCK_REGION=us-east-1
+   BEDROCK_MODEL=us.anthropic.claude-sonnet-4-6-20251001-v1:0
+   BEDROCK_ACCESS_KEY_ID=your_access_key_id
+   BEDROCK_SECRET_ACCESS_KEY=your_secret_access_key
+
+   # Bedrock Mantle
+   BEDROCK_MANTLE_API_KEY=your_api_key_here
+   BEDROCK_MANTLE_BASE_URL=https://bedrock-mantle.us-east-1.api.aws/v1
+   BEDROCK_MANTLE_MODEL=qwen.qwen3-coder-next
    ```
 
    LibriScribe uses these model values as **provider defaults**:
