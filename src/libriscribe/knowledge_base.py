@@ -82,6 +82,20 @@ class Worldbuilding(BaseModel):
     appendices: str = ""
 
 
+class StyleProfile(BaseModel):
+    """Extracted style attributes from an inspired_by reference."""
+
+    source: str = ""
+    point_of_view: str = ""
+    sentence_length: str = ""
+    pacing: str = ""
+    dialogue_style: str = ""
+    prose_tone: str = ""
+    structural_patterns: str = ""
+    thematic_preoccupations: str = ""
+    what_to_avoid: str = ""
+
+
 class ProjectKnowledgeBase(BaseModel):
     project_name: str
     title: str = "Untitled"
@@ -108,11 +122,13 @@ class ProjectKnowledgeBase(BaseModel):
     chapter_error_mode: str = "stop"
     dynamic_questions: dict[str, str] = Field(default_factory=dict)
     retrieval: RetrievalConfig = Field(default_factory=RetrievalConfig)
+    inspired_by: str = ""
 
     characters: dict[str, Character] = Field(default_factory=dict)
     worldbuilding: Worldbuilding | None = None
     chapters: dict[int, Chapter] = Field(default_factory=dict)
     outline: str = ""
+    style_profile: StyleProfile | None = None
     project_dir: Path | None = None
 
     @field_validator("num_characters", "num_chapters", mode="before")

@@ -7,6 +7,7 @@ from typing import Optional
 
 from libriscribe.utils.llm_client import LLMClient
 from libriscribe.utils import prompts_context as prompts
+from libriscribe.utils.prompts_context import format_style_profile_block
 from libriscribe.agents.agent_base import Agent
 from libriscribe.utils.file_utils import write_markdown_file, write_json_file
 from libriscribe.knowledge_base import ProjectKnowledgeBase, Chapter, Scene
@@ -51,6 +52,11 @@ class OutlinerAgent(Agent):
             else:
                 initial_prompt = prompts.OUTLINE_PROMPT.format(**project_knowledge_base.model_dump())
                 initial_prompt += f"\n\nIMPORTANT: Generate at most {max_chapters} chapters."
+
+            # Inject style profile block when present
+            style_profile_block = format_style_profile_block(project_knowledge_base.style_profile)
+            if style_profile_block:
+                initial_prompt += f"\n\n{style_profile_block}"
 
             # Task 10: Append user's chapter count preference to prompt (only when explicitly set)
             num_ch_str = project_knowledge_base.get("num_chapters_str", "")
@@ -208,6 +214,11 @@ class OutlinerAgent(Agent):
 
             Be sure to include all main characters relevant to this chapter and create a natural flow between scenes.
             """
+
+            # Inject style profile block when present
+            scene_style_block = format_style_profile_block(project_knowledge_base.style_profile)
+            if scene_style_block:
+                scene_prompt += f"\n\n{scene_style_block}"
 
             # Task 3: Append advanced-mode author notes to scene prompt
             notes = []

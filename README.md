@@ -37,6 +37,11 @@ graph TD
     PM --> PL[Prompt Loader]
     PL -. Loads YAML Templates .-> Templates[(prompts/templates/)]
 
+    PM --> SR[Style Research Agent]
+    SR -. populates .-> SP[(style_profile in PKB)]
+    SP -. injected into .-> OL
+    SP -. injected into .-> CW
+
     PM --> CG[Concept Generator]
     PM --> OL[Outliner]
     PM --> CH[Character Generator]
@@ -66,6 +71,7 @@ graph TD
     style IC fill:#7C3AED,stroke:#6D28D9,color:#FFFFFF,stroke-width:2px
     style NGB fill:#7C3AED,stroke:#6D28D9,color:#FFFFFF,stroke-width:2px
     style CQA fill:#7C3AED,stroke:#6D28D9,color:#FFFFFF,stroke-width:2px
+    style SR fill:#D97706,stroke:#B45309,color:#FFFFFF,stroke-width:2px
 ```
 
 ---
@@ -105,6 +111,12 @@ graph TD
 *   **Chapter 1 narrative constraints:** The narrative graph is seeded with character facts before the first chapter is written, giving InvariantChecker context from scene 1.
 *   **User chapter count honoured:** Advanced mode chapter preferences (e.g. "8-12") are respected by the Outliner instead of defaulting to a length-only ceiling.
 *   **Complete quality rewrite coverage:** The reactive rewrite loop now fixes all failing quality axes, not just the lowest three.
+
+### 9. Style Research Agent 🎨
+*   **Pre-Pipeline Style Extraction:** When `inspired_by` is set (e.g. `"Cormac McCarthy"`, `"The Road"`), a focused LLM research pass runs before outlining and extracts eight concrete style attributes: point of view, sentence length, pacing, dialogue style, prose tone, structural patterns, thematic preoccupations, and what to avoid.
+*   **Deterministic Style Profile:** Results are stored as a `StyleProfile` in the `ProjectKnowledgeBase`, serialised to `project_data.json`, and injected as a `STYLE REFERENCE` block into every outliner and scene-writer prompt.
+*   **Resumed-Run Safe:** If a profile already exists in the PKB (resumed project), the agent is a no-op — no extra LLM call.
+*   **Graceful Degradation:** Malformed JSON is self-healed via regex extraction. LLM failures log a warning and continue — the pipeline never stops because of a missing style profile.
 
 ### 7. Narrative Quality Layer 📖
 *   **NarrativeGraphBuilder:** After each chapter is written, an LLM pass extracts structured facts (entity, predicate, value) into a persistent `narrative_graph.json`. Facts survive partial runs — existing data is never overwritten on failure.

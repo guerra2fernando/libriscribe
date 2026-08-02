@@ -16,6 +16,7 @@ from libriscribe.narrative.models import NarrativeFact, NarrativeGraph
 from libriscribe.utils import prompts_context as prompts
 from libriscribe.utils.file_utils import write_markdown_file
 from libriscribe.utils.llm_client import LLMClient
+from libriscribe.utils.prompts_context import format_style_profile_block
 
 console = Console()
 logger = logging.getLogger(__name__)
@@ -207,6 +208,8 @@ class ChapterWriterAgent(Agent):
         constraint_block = checker.format_violations_for_prompt(violations)
         scene_title = self._scene_title(scene)
 
+        style_profile_block = format_style_profile_block(project_knowledge_base.style_profile)
+
         scene_prompt = prompts.SCENE_PROMPT.format(
             chapter_number=chapter_number,
             chapter_title=chapter.title,
@@ -224,6 +227,7 @@ class ChapterWriterAgent(Agent):
             goal=scene.goal or "None specified",
             emotional_beat=scene.emotional_beat or "None specified",
             total_scenes=len(ordered_scenes),
+            style_profile_block=style_profile_block,
         )
 
         # Prepend constraint blocks (invariants first, then style hints)
@@ -262,7 +266,7 @@ class ChapterWriterAgent(Agent):
             if wb_parts:
                 worldbuilding_block = "WORLD CONTEXT (maintain consistency):\n" + "\n".join(wb_parts)
 
-        prefix_parts = [p for p in [constraint_block, style_block, dq_block, char_profiles_block, worldbuilding_block] if p]
+        prefix_parts = [p for p in [constraint_block, style_block, style_profile_block, dq_block, char_profiles_block, worldbuilding_block] if p]
         if prefix_parts:
             scene_prompt = "\n\n".join(prefix_parts) + "\n\n" + scene_prompt
 

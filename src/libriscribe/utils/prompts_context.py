@@ -387,7 +387,7 @@ Write Scene {scene_number} of {total_scenes} for Chapter {chapter_number}: {chap
 The book is written in {language}.
 Tone: {tone}
 Target audience: {target_audience}
-
+{style_profile_block}
 Chapter Summary:
 {chapter_summary}
 
@@ -411,6 +411,30 @@ Important: Focus on showing rather than telling. Create an immersive experience 
 
 IMPORTANT: The content should be written entirely in {language}.
 """
+
+
+def format_style_profile_block(style_profile: object) -> str:
+    """Return a STYLE REFERENCE block string, or empty string if profile is None."""
+    if style_profile is None:
+        return ""
+    sp = style_profile
+    lines = []
+    for label, value in [
+        ("Point of view", getattr(sp, "point_of_view", "")),
+        ("Sentence length", getattr(sp, "sentence_length", "")),
+        ("Pacing", getattr(sp, "pacing", "")),
+        ("Dialogue style", getattr(sp, "dialogue_style", "")),
+        ("Prose tone", getattr(sp, "prose_tone", "")),
+        ("Structural patterns", getattr(sp, "structural_patterns", "")),
+        ("Thematic preoccupations", getattr(sp, "thematic_preoccupations", "")),
+        ("Avoid", getattr(sp, "what_to_avoid", "")),
+    ]:
+        if value and value.strip():
+            lines.append(f"  - {label}: {value}")
+    if not lines:
+        return ""
+    source = getattr(sp, "source", "")
+    return "STYLE REFERENCE (inspired by: " + source + "):\n" + "\n".join(lines)
 
 
 def clean_worldbuilding_for_category(project_knowledge_base: ProjectKnowledgeBase):

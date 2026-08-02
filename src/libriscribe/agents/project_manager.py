@@ -25,6 +25,7 @@ from libriscribe.agents.outliner import OutlinerAgent
 from libriscribe.agents.plagiarism_checker import PlagiarismCheckerAgent
 from libriscribe.agents.researcher import ResearcherAgent
 from libriscribe.agents.style_editor import StyleEditorAgent
+from libriscribe.agents.style_research import StyleResearchAgent
 from libriscribe.agents.worldbuilding import WorldbuildingAgent
 from libriscribe.knowledge_base import ProjectKnowledgeBase, Worldbuilding
 from libriscribe.settings import Settings
@@ -76,6 +77,7 @@ class ProjectManagerAgent:
             "researcher": ResearcherAgent(self.llm_client),
             "formatting": FormattingAgent(self.llm_client),
             "style_editor": StyleEditorAgent(self.llm_client),
+            "style_research": StyleResearchAgent(self.llm_client),
             "plagiarism_checker": PlagiarismCheckerAgent(self.llm_client),
             "fact_checker": FactCheckerAgent(self.llm_client),
         }
@@ -389,9 +391,25 @@ class ProjectManagerAgent:
         self.save_project_data()  # Save after update
         self._mark_stage_finished("concept")
 
+    def run_style_research(self) -> None:
+        """Run StyleResearchAgent once before outline if inspired_by is set."""
+        if not self.project_knowledge_base:
+            return
+        if not self.project_knowledge_base.inspired_by:
+            return
+        agent = self.agents.get("style_research")
+        if agent is None:
+            return
+        try:
+            agent.execute(self.project_knowledge_base)  # type: ignore[attr-defined]
+            self.save_project_data()
+        except Exception:
+            self.logger.exception("StyleResearchAgent failed; continuing without style profile.")
+
     def generate_outline(self):
         """Generates a book outline."""
         self._mark_stage_started("outline")
+        self.run_style_research()
         self.run_agent("outliner")  # type: ignore
         self.save_project_data()  # Save after update
         self._mark_stage_finished("outline")
