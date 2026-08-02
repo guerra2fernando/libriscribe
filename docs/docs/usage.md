@@ -103,3 +103,40 @@ Once a project is initialized, the CLI also exposes focused commands for later s
 - `libriscribe resume`
 
 These commands are useful if you want to continue working on a project after the initial guided setup.
+
+## Narrative Quality Layer CLI
+
+The Narrative Quality Layer adds three commands for inspecting and maintaining narrative consistency and prose quality:
+
+### Narrative graph rebuild
+
+Re-extracts narrative facts from all chapters and writes `narrative_graph.json`:
+
+```bash
+libriscribe narrative rebuild --project my_project
+```
+
+### Narrative invariant check
+
+Checks all scenes in a specific chapter against the current narrative graph for continuity violations:
+
+```bash
+libriscribe narrative check my_project --chapter 2
+```
+
+Output shows any hard violations (dead characters, injured limbs, destroyed locations) and soft violations (advisory notes).
+
+### Prose quality analysis
+
+Scores a chapter's prose across 5 axes and prints a bar chart to the console. Saves `quality_chapter_{N}.json`:
+
+```bash
+libriscribe quality my_project --chapter 1
+```
+
+### Automatic quality loop during writing
+
+When a chapter is written via `libriscribe write` or guided setup, the quality loop runs automatically:
+
+- **Option A:** Prior chapter quality report injected as style hints into scene prompts (zero extra LLM calls).
+- **Option B:** Each generated scene is scored; scenes below 0.65 are rewritten once with targeted instructions.

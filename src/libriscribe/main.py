@@ -1510,6 +1510,75 @@ def xref(
 app.add_typer(retrieval_app, name="retrieval")
 
 
+# --- Narrative CLI Commands ---
+narrative_app = typer.Typer(help="Manage the narrative invariant graph.")
+
+
+def _load_narrative_project(project_name: str) -> None:
+    project_manager.load_project_data(project_name)
+    if not project_manager.project_knowledge_base:
+        console.print(f"[red]Error:[/red] Project '{project_name}' not found.")
+        raise typer.Exit(code=1)
+    project_manager.initialize_llm_client(
+        project_manager.project_knowledge_base.llm_provider,
+        project_manager.project_knowledge_base.model,
+    )
+
+
+@narrative_app.command("rebuild")
+def narrative_rebuild(
+    project: str = typer.Option(..., "--project", "-p", help="Project name"),
+) -> None:
+    """Re-extracts the narrative graph from all existing chapters."""
+    _load_narrative_project(project)
+    pkb = project_manager.project_knowledge_base
+    if pkb is None or project_manager.project_dir is None:
+        return
+    num_chapters = pkb.num_chapters
+    if isinstance(num_chapters, tuple):
+        num_chapters = num_chapters[1]
+
+    console.print(f"[cyan]Rebuilding narrative graph for '{project}'...[/cyan]")
+    for i in range(1, num_chapters + 1):
+        chapter_path = project_manager.project_dir / f"chapter_{i}.md"
+        if chapter_path.exists():
+            console.print(f"  Processing chapter {i}...")
+            project_manager.update_narrative_graph(i)
+    console.print("[green]Narrative graph rebuild complete.[/green]")
+
+
+@narrative_app.command("check")
+def narrative_check(
+    project: str = typer.Option(..., "--project", "-p", help="Project name"),
+    chapter: int = typer.Option(..., "--chapter", "-c", help="Chapter number"),
+) -> None:
+    """Runs InvariantChecker on a chapter's scenes and prints violations."""
+    _load_narrative_project(project)
+    console.print(f"[cyan]Checking narrative violations for chapter {chapter}...[/cyan]")
+    project_manager.check_narrative_violations(chapter)
+
+
+app.add_typer(narrative_app, name="narrative")
+
+
+@app.command()
+def quality(
+    project: str = typer.Option(..., "--project", "-p", help="Project name"),
+    chapter: int = typer.Option(..., "--chapter", "-c", help="Chapter number"),
+) -> None:
+    """Runs ContentQualityAgent on a chapter and prints the quality report."""
+    project_manager.load_project_data(project)
+    if not project_manager.project_knowledge_base:
+        console.print(f"[red]Error:[/red] Project '{project}' not found.")
+        raise typer.Exit(code=1)
+    project_manager.initialize_llm_client(
+        project_manager.project_knowledge_base.llm_provider,
+        project_manager.project_knowledge_base.model,
+    )
+    console.print(f"[cyan]Analysing quality for chapter {chapter}...[/cyan]")
+    project_manager.analyze_quality(chapter)
+
+
 if __name__ == "__main__":
     # Display environment info for debugging
     if "--debug" in sys.argv:

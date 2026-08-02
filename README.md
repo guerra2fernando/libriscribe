@@ -36,24 +36,36 @@ graph TD
     User([User CLI / Prompt]) --> PM[Project Manager Agent]
     PM --> PL[Prompt Loader]
     PL -. Loads YAML Templates .-> Templates[(prompts/templates/)]
-    
+
     PM --> CG[Concept Generator]
     PM --> OL[Outliner]
     PM --> CH[Character Generator]
     PM --> WB[Worldbuilder]
     PM --> CW[Chapter Writer]
     PM --> ED[Editor]
-    
+
+    CW --> IC[Invariant Checker]
+    IC -. reads .-> NG[(narrative_graph.json)]
+    CW --> NGB[Narrative Graph Builder]
+    NGB -. writes .-> NG
+    CW --> CQA[Content Quality Agent]
+    CQA -. Option A style hints .-> CW
+    CQA -. Option B rewrite loop .-> CW
+    CQA -. saves .-> QR[(quality_chapter_N.json)]
+
     CW & ED --> LLM[Unified LLM Client]
     LLM --> CT[Cost Tracker]
     CT --> Log[(llm_usage.jsonl)]
-    
+
     PM --> FA[Optimized Formatting Agent]
     FA -. Local Compilation .-> Manuscript([manuscript.md / PDF])
-    
+
     style PM fill:#2563EB,stroke:#1D4ED8,color:#FFFFFF,stroke-width:2px
     style FA fill:#059669,stroke:#047857,color:#FFFFFF,stroke-width:2px
     style CT fill:#DC2626,stroke:#B91C1C,color:#FFFFFF,stroke-width:2px
+    style IC fill:#7C3AED,stroke:#6D28D9,color:#FFFFFF,stroke-width:2px
+    style NGB fill:#7C3AED,stroke:#6D28D9,color:#FFFFFF,stroke-width:2px
+    style CQA fill:#7C3AED,stroke:#6D28D9,color:#FFFFFF,stroke-width:2px
 ```
 
 ---
@@ -83,6 +95,12 @@ graph TD
 *   **Automated Outlining & Concept Creation:** Turn standard premises into rich narrative blueprints.
 *   **Worldbuilding & Character Generation:** Generate complex multi-dimensional character profiles and coherent cultures.
 *   **Chapter Writing & Refining:** Continuous draft-review cycles via an expert editing loops.
+
+### 7. Narrative Quality Layer 📖
+*   **NarrativeGraphBuilder:** After each chapter is written, an LLM pass extracts structured facts (entity, predicate, value) into a persistent `narrative_graph.json`. Facts survive partial runs — existing data is never overwritten on failure.
+*   **InvariantChecker:** Before each scene is generated, hard and soft invariant violations are detected (dead characters reappearing, injured limbs performing physical actions, destroyed locations revisited) and injected as `NARRATIVE CONSTRAINTS:` into the scene prompt — zero extra user steps.
+*   **ContentQualityAgent — Preventive (Option A):** Reads `quality_chapter_{N-1}.json` before writing chapter N and injects a `STYLE CONSTRAINTS:` block into every scene prompt, listing patterns to avoid from the prior chapter (clichés, tell-not-show phrases, etc.).
+*   **ContentQualityAgent — Reactive (Option B):** After each scene is generated, scores it across 5 quality axes. If the overall score is below 0.65, fires one targeted rewrite pass preserving all plot facts while fixing only the flagged issues.
 
 ### 6. Local Retrieval & Knowledge Search 🔍
 *   **Automatic Parsing & Chunking:** Auto-extracts character profiles, worldbuilding, summaries, and full chapters into searchable tokens.
@@ -175,6 +193,21 @@ Manage and search your project's knowledge base and drafts directly:
 *   **Lookup cross-references & co-occurrences of an entity:**
     ```bash
     libriscribe retrieval xref --project my_project --entity "Castle Iron"
+    ```
+
+### 5. Narrative Quality CLI
+Inspect and maintain the narrative consistency graph and prose quality reports:
+*   **Rebuild narrative graph from all chapters:**
+    ```bash
+    libriscribe narrative rebuild --project my_project
+    ```
+*   **Check invariant violations for a specific chapter's scenes:**
+    ```bash
+    libriscribe narrative check my_project --chapter 2
+    ```
+*   **Run prose quality analysis on a chapter:**
+    ```bash
+    libriscribe quality my_project --chapter 1
     ```
 
 ---
@@ -302,12 +335,15 @@ A typical project created by LibriScribe looks like this:
 your_project/
 ├── project_data.json          # Project metadata & configurations
 ├── .libriscribe_status.json   # Lightweight stage/checkpoint recovery state
-├── outline.md                # Generated chapter-by-chapter outline
-├── characters.json           # Multi-dimensional character profiles
-├── world.json                # Worldbuilding details (category-specific)
-├── chapter_1.md              # Generated and polished chapter drafts
+├── outline.md                 # Generated chapter-by-chapter outline
+├── characters.json            # Multi-dimensional character profiles
+├── world.json                 # Worldbuilding details (category-specific)
+├── chapter_1.md               # Generated and polished chapter drafts
 ├── chapter_2.md
-└── research_results.md       # Research findings
+├── research_results.md        # Research findings
+├── narrative_graph.json       # Persistent narrative facts (entities, predicates, values)
+├── quality_chapter_1.json     # Prose quality report for chapter 1 (5 axes, 0–1 scores)
+└── quality_chapter_2.json     # Prose quality report for chapter 2
 ```
 
 All global execution costs and API calls are written directly to your workspace:
@@ -325,6 +361,14 @@ All global execution costs and API calls are written directly to your workspace:
 - [x] **Response Quality & Self-Healing JSON Parser**
 - [x] **Automatic Model Fallback System**
 - [ ] **Model Performance Benchmarking**
+
+### 📖 Narrative Quality Layer
+- [x] **NarrativeGraphBuilder**: Automatic fact extraction into persistent `narrative_graph.json`
+- [x] **InvariantChecker**: Pre-scene constraint injection (dead characters, injured limbs, destroyed locations)
+- [x] **ContentQualityAgent — 5-Axis Prose Scoring**: cliche density, show-don't-tell, dialogue voice, sentence variety, scene function
+- [x] **Option A — Preventive Style Injection**: Prior-chapter quality flags injected into next chapter prompts
+- [x] **Option B — Reactive Rewrite Loop**: Per-scene inline rewrite when quality score < 0.65
+- [x] **Narrative CLI**: `narrative rebuild`, `narrative check`, `quality` commands
 
 ### 🔍 Vector Store & Search Enhancement
 - [x] **Core Scaffolding & Local Keyword Retrieval** (Phase 0 + Phase 1)

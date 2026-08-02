@@ -4,112 +4,88 @@ sidebar_position: 6
 
 # Chapter Writer Agent
 
-The Chapter Writer Agent generates the first draft of each chapter based on the outline, character profiles, and worldbuilding details.
+The Chapter Writer Agent generates the first draft of each chapter scene by scene, with automatic narrative constraint injection and an inline prose quality loop.
 
 ## Overview
 
-This agent transforms your outline into fully-written chapters, incorporating character development, world details, and maintaining narrative consistency throughout the writing process.
+This agent transforms the outline into fully-written chapters. For each scene it:
 
-## Features
+1. Checks narrative invariants (dead characters, injured limbs, destroyed locations) and prepends any violations as hard constraints in the prompt.
+2. Injects style hints from the prior chapter's quality report to prevent recurring clichés and tell-not-show patterns.
+3. Generates the scene prose via the configured LLM.
+4. Scores the generated prose across 5 quality axes; if the overall score is below 0.65, fires one targeted rewrite pass preserving all plot facts.
+5. After all scenes are written, triggers `NarrativeGraphBuilder` to extract and persist new narrative facts.
 
-### Chapter Creation
-- Generates complete chapter drafts
-- Follows outline structure
-- Incorporates character voices
-- Maintains narrative flow
-- Implements world details
+## Quality Pipeline
 
-### Content Integration
-- Uses character profiles
-- Implements worldbuilding elements
-- Follows plot points
-- Maintains story continuity
+### Option A — Preventive Style Injection
 
-### Writing Elements
-- Dialogue generation
-- Scene description
-- Action sequences
-- Character introspection
-- Setting details
+Before writing chapter N, the agent reads `quality_chapter_{N-1}.json`. Any quality axis scoring below **0.70** contributes a line to a `STYLE CONSTRAINTS:` block that is prepended to every scene prompt in the chapter. This costs zero extra LLM calls.
+
+Example injected block:
+```
+STYLE CONSTRAINTS (patterns to avoid from prior chapter quality analysis):
+- [cliche_density] Replace opening atmospheric sentences with a concrete sensory detail or action.
+  Avoid phrases like: "The air was thick with tension"
+  Avoid phrases like: "he let out a breath he didn't know he was holding"
+```
+
+### Option B — Reactive Rewrite Loop
+
+After each scene is generated, `ContentQualityAgent.score_prose()` evaluates it. If `overall_score < 0.65`:
+
+- The lowest-scoring axes are collected.
+- A rewrite prompt is built listing only the specific problems to fix, with strict instructions to preserve all character names, locations, events, and injuries.
+- One rewrite pass fires against the LLM (max 2 000 tokens).
+- If the rewrite fails or returns output shorter than half the original, the original scene is kept without error.
+
+The threshold is configurable via `_QUALITY_REWRITE_THRESHOLD` in `chapter_writer.py` (default `0.65`).
+
+## Narrative Graph Update
+
+After all scenes in the chapter are written, the agent calls `NarrativeGraphBuilder.extract_from_chapter()`. Failure is caught and logged; existing facts in `narrative_graph.json` are never lost.
 
 ## Input Requirements
 
-The Chapter Writer requires:
-1. Chapter outline
-2. Character profiles
+1. Chapter outline (scenes, characters, setting, goal, emotional beat)
+2. Character profiles from the knowledge base
 3. Worldbuilding information
-4. Project metadata
-5. Chapter number
+4. Project metadata (title, genre, language)
+5. `narrative_graph.json` (auto-created if missing)
+6. `quality_chapter_{N-1}.json` (used for Option A; silently skipped if missing)
 
-## Process Flow
+## Output Files
 
-1. **Preparation**
-   - Loads chapter outline
-   - References character data
-   - Accesses worldbuilding details
-   - Verifies project settings
+| File | Description |
+|------|-------------|
+| `chapter_{N}.md` | Written chapter in Markdown |
+| `narrative_graph.json` | Updated with facts extracted from this chapter |
 
-2. **Content Generation**
-   - Creates chapter structure
-   - Develops scenes
-   - Writes dialogue
-   - Adds descriptions
-   - Incorporates details
+## CLI Usage
 
-3. **Output Processing**
-   - Formats content
-   - Adds chapter headers
-   - Implements styling
-   - Saves to file
-
-## Usage
+The chapter writer is invoked automatically during guided setup. It can also be triggered directly:
 
 ```bash
-# Through the CLI
 libriscribe write --chapter-number 1
 ```
 
-The chapter writer is most commonly invoked through the guided setup flow or through the Project Manager.
-Direct agent usage is primarily relevant for contributors working inside the codebase.
-
-## Best Practices
-
-1. **Preparation**
-   - Review chapter outline
-   - Check character references
-   - Verify world details
-   - Confirm story progression
-
-2. **Quality Control**
-   - Monitor narrative flow
-   - Check character consistency
-   - Verify plot progression
-   - Maintain pacing
-
-3. **Integration**
-   - Follow outline structure
-   - Use character voices
-   - Include world details
-   - Maintain continuity
-
 ## Error Handling
 
-The agent handles:
-- Missing input files
-- Invalid chapter numbers
-- Content generation issues
-- File system errors
+- Missing chapter in knowledge base: a default chapter is created and logged.
+- Empty LLM response for a scene: placeholder text is inserted; chapter writing continues.
+- Narrative graph update failure: existing graph is preserved; chapter writing is not aborted.
+- Quality scoring or rewrite failure: original scene content is kept; chapter writing continues.
 
 ## Output Format
 
-Chapters are generated in Markdown format:
-
 ```markdown
-# Chapter [Number]: [Title]
+## Chapter 1: Chapter Title
 
-[Chapter content with proper formatting]
+**Scene 1: Scene summary...**
 
-## Scene breaks where appropriate
+[Scene prose...]
 
-[Continued content...]
+**Scene 2: Scene summary...**
+
+[Scene prose...]
 ```

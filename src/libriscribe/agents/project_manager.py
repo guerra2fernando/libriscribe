@@ -14,6 +14,7 @@ from libriscribe.agents.agent_base import Agent
 from libriscribe.agents.chapter_writer import ChapterWriterAgent
 from libriscribe.agents.character_generator import CharacterGeneratorAgent
 from libriscribe.agents.concept_generator import ConceptGeneratorAgent
+from libriscribe.agents.content_quality import ContentQualityAgent
 from libriscribe.agents.content_reviewer import ContentReviewerAgent
 from libriscribe.agents.editor import EditorAgent
 from libriscribe.agents.fact_checker import FactCheckerAgent
@@ -65,6 +66,7 @@ class ProjectManagerAgent:
             self.llm_client.set_model(model_name)
         self.agents = {
             "content_reviewer": ContentReviewerAgent(self.llm_client),  # Pass client
+            "content_quality": ContentQualityAgent(self.llm_client),
             "concept_generator": ConceptGeneratorAgent(self.llm_client),
             "outliner": OutlinerAgent(self.llm_client),
             "character_generator": CharacterGeneratorAgent(self.llm_client),
@@ -426,6 +428,7 @@ class ProjectManagerAgent:
         """Writes, reviews, and potentially edits a chapter (centralized review logic)."""
         self.write_chapter(chapter_number)  # Write the chapter
         self.review_content(chapter_number)  # Review for content issues
+        self.update_narrative_graph(chapter_number)  # Update graph before next chapter
 
         if (
             self.project_knowledge_base
@@ -454,6 +457,86 @@ class ProjectManagerAgent:
         """Refines an existing chapter (Editor Agent)."""
         self.run_agent("editor", chapter_number=chapter_number)
         self.save_project_data()
+
+    def analyze_quality(self, chapter_number: int) -> None:
+        """Runs ContentQualityAgent on the chapter and prints a summary to console."""
+        from typing import cast, Any
+        if not self.project_knowledge_base:
+            console.print("[red]ERROR: Project not initialized.[/red]")
+            return
+        agent = self.agents.get("content_quality")
+        if agent is None:
+            console.print("[red]ERROR: content_quality agent not registered.[/red]")
+            return
+        if self.llm_client:
+            selected_model = self._get_model_for_agent("content_quality")
+            if selected_model:
+                self.llm_client.set_model(selected_model)
+            self.llm_client.set_fallback_chain(self._get_fallback_chain_for_agent("content_quality"))
+        report = cast(Any, agent).execute(
+            project_knowledge_base=self.project_knowledge_base,
+            chapter_number=chapter_number,
+        )
+        if report is None:
+            console.print(f"[red]Quality analysis failed for chapter {chapter_number}.[/red]")
+            return
+        console.print(f"\n[bold]Quality Report — Chapter {chapter_number}[/bold]  (overall: {report.overall_score:.2f})")
+        for axis in report.axes:
+            bar = "█" * round(axis.score * 10)
+            console.print(f"  [cyan]{axis.name:<30}[/cyan] {bar:<10} {axis.score:.2f}")
+            if axis.flagged_excerpts:
+                console.print(f"    [dim]Flagged: {axis.flagged_excerpts[0][:80]}...[/dim]")
+        console.print(f"\n[yellow]Priority fix:[/yellow] {report.priority_fix}")
+
+    def update_narrative_graph(self, chapter_number: int) -> None:
+        """Runs NarrativeGraphBuilder.extract_from_chapter to update the persistent graph."""
+        if not self.project_knowledge_base or not self.project_dir or not self.llm_client:
+            return
+        try:
+            from libriscribe.narrative.graph_builder import NarrativeGraphBuilder
+            builder = NarrativeGraphBuilder(self.llm_client, self.project_dir, self.project_knowledge_base)
+            new_facts = builder.extract_from_chapter(chapter_number)
+            self.logger.info("Narrative graph: %d new facts from chapter %d.", len(new_facts), chapter_number)
+        except Exception:
+            self.logger.exception("Failed to update narrative graph for chapter %d.", chapter_number)
+
+    def check_narrative_violations(self, chapter_number: int) -> None:
+        """Runs InvariantChecker on all scenes of the chapter and prints violations."""
+        if not self.project_knowledge_base or not self.project_dir:
+            console.print("[red]ERROR: Project not initialized.[/red]")
+            return
+        from libriscribe.narrative.models import NarrativeGraph
+        from libriscribe.narrative.invariant_checker import InvariantChecker
+
+        graph_path = self.project_dir / "narrative_graph.json"
+        if graph_path.exists():
+            try:
+                graph = NarrativeGraph.load(graph_path)
+            except Exception:
+                self.logger.exception("Could not load narrative graph.")
+                graph = NarrativeGraph.empty(self.project_knowledge_base.project_name)
+        else:
+            graph = NarrativeGraph.empty(self.project_knowledge_base.project_name)
+
+        chapter = self.project_knowledge_base.get_chapter(chapter_number)
+        if not chapter:
+            console.print(f"[yellow]Chapter {chapter_number} not found in knowledge base.[/yellow]")
+            return
+
+        checker = InvariantChecker(graph)
+        total_violations = 0
+        for scene in chapter.scenes:
+            violations = checker.check_scene(scene, chapter_number, self.project_knowledge_base)
+            for v in violations:
+                total_violations += 1
+                tag = "[red]HARD[/red]" if v.severity == "hard" else "[yellow]SOFT[/yellow]"
+                console.print(f"  {tag} Scene {scene.scene_number} — {v.description}")
+                console.print(f"       [dim]Evidence (ch{v.established_chapter}): '{v.evidence_quote}'[/dim]")
+
+        if total_violations == 0:
+            console.print(f"[green]No narrative violations found for chapter {chapter_number}.[/green]")
+        else:
+            console.print(f"\n[bold]{total_violations} violation(s) found for chapter {chapter_number}.[/bold]")
 
     def format_book(self, output_path: str):
         """Formats the entire book into a single Markdown or PDF file.

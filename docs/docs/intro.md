@@ -19,7 +19,7 @@ Here's a brief overview of the key agents:
 *   **`OutlinerAgent`:**  Creates a comprehensive chapter-by-chapter outline for the book.
 *   **`CharacterGeneratorAgent`:**  Generates detailed character profiles, including background, personality, and relationships.
 *   **`WorldbuildingAgent`:**  Creates detailed worldbuilding information (history, culture, geography, etc.) relevant to the book's genre and setting.
-*   **`ChapterWriterAgent`:**  Writes the first draft of a chapter based on the outline, character profiles, and worldbuilding details.
+*   **`ChapterWriterAgent`:**  Writes the first draft of a chapter scene-by-scene, with narrative constraint injection and quality loop.
 *   **`EditorAgent`:**  Refines and edits a chapter, focusing on clarity, consistency, grammar, and style.
 *   **`StyleEditorAgent`:** Refines the chapter's writing style based on specified tone and target audience preferences.
 *   **`ContentReviewerAgent`:** Reviews chapter content for consistency, clarity, and plot holes.
@@ -27,6 +27,16 @@ Here's a brief overview of the key agents:
 *   **`PlagiarismCheckerAgent`:**  Identifies potential plagiarism issues in a chapter.
 *   **`ResearcherAgent`:**  Conducts web research on a specified topic and provides a summary of findings.
 *   **`FormattingAgent`:**  Combines all generated chapters into a single, well-formatted Markdown or PDF document.
+
+## Narrative Quality Layer
+
+LibriScribe v0.5 adds three systems that close the loop between writing and quality automatically:
+
+*   **`NarrativeGraphBuilder`:** Extracts structured narrative facts (entities, predicates, values) from each chapter after it is written. Facts are persisted in `narrative_graph.json` and survive partial runs.
+*   **`InvariantChecker`:** Before each scene is generated, detects hard and soft violations (dead characters reappearing, physical actions by injured characters, destroyed locations revisited) and injects a `NARRATIVE CONSTRAINTS:` block into the scene prompt.
+*   **`ContentQualityAgent`:** Scores prose across 5 axes — cliche density, show-don't-tell ratio, dialogue voice consistency, sentence variety, and scene function clarity. Operates in two modes:
+    *   **Option A (Preventive):** Prior-chapter quality flags injected into the next chapter's scene prompts as `STYLE CONSTRAINTS:`.
+    *   **Option B (Reactive):** Per-scene inline rewrite when the overall score falls below 0.65, targeting only the flagged issues while preserving all plot facts.
 
 ## Getting Started
 
