@@ -229,6 +229,7 @@ Manage and search your project's knowledge base and drafts directly:
     ```bash
     libriscribe retrieval search --project my_project --query "Mira Thorn"
     ```
+*   **Optional semantic and hybrid search:** Install `pip install -e ".[semantic]"`, prepare a local embedding model, and follow the [local retrieval guide](https://guerra2fernando.github.io/libriscribe/docs/retrieval-and-quality) for setup and hybrid search examples.
 *   **Lookup cross-references & co-occurrences of an entity:**
     ```bash
     libriscribe retrieval xref --project my_project --entity "Castle Iron"

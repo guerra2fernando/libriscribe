@@ -5,7 +5,7 @@ import os
 import sys
 import warnings
 from importlib.metadata import version as package_version
-from typing import cast
+from typing import Literal, cast
 
 import typer
 from pydantic import PydanticDeprecationWarning
@@ -1509,7 +1509,7 @@ def refresh(project: str = typer.Option(..., "--project", "-p", help="Project na
 def search(
     project: str = typer.Option(..., "--project", "-p", help="Project name"),
     query: str = typer.Option(..., "--query", "-q", help="Search query"),
-    mode: str = typer.Option("keyword", "--mode", "-m", help="Search mode: keyword, semantic, or hybrid."),
+    mode: Literal["keyword", "semantic", "hybrid"] = typer.Option("keyword", "--mode", "-m", help="Search mode: keyword, semantic, or hybrid."),
     top_k: int = typer.Option(6, "--top-k", "-k", help="Number of results to return"),
 ):
     """Queries the local retrieval index."""

@@ -16,6 +16,25 @@ pip install -e ".[semantic]"
 
 Sentence-transformers computes embeddings on the current device. Model inference consumes local CPU/GPU time and disk space but makes no provider API calls and has no per-request provider charge. Models are not downloaded implicitly by LibriScribe: local-only loading is enabled by default. Use a model already in the local Hugging Face cache, or pass a local model directory.
 
+To prepare the example model, install the optional extra, then explicitly download the model once to a local directory. The download is an opt-in setup step; indexing and searching then use the local files only. The `hf` command is provided by the Hugging Face Hub dependency:
+
+```bash
+python -m pip install -e ".[semantic]"
+hf download sentence-transformers/all-MiniLM-L6-v2 --local-dir "$HOME/.cache/libriscribe/models/all-MiniLM-L6-v2"
+libriscribe retrieval rebuild --project MyBook --mode hybrid --embedding-model "$HOME/.cache/libriscribe/models/all-MiniLM-L6-v2"
+```
+
+On Windows PowerShell, choose a writable local directory, for example:
+
+```powershell
+python -m pip install -e ".[semantic]"
+$modelDir = Join-Path $env:LOCALAPPDATA 'LibriScribe\models\all-MiniLM-L6-v2'
+hf download sentence-transformers/all-MiniLM-L6-v2 --local-dir $modelDir
+libriscribe retrieval rebuild --project MyBook --mode hybrid --embedding-model $modelDir
+```
+
+The example model is English-focused. Downloading it requires network access and local disk space; no model is bundled with the LibriScribe package. Once prepared, later indexing and searches do not need network access.
+
 Configure the index mode and build its local files:
 
 ```bash

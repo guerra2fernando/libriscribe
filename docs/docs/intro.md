@@ -30,7 +30,7 @@ Here's a brief overview of the key agents:
 
 ## Narrative Quality Layer
 
-LibriScribe v0.5 adds three systems that close the loop between writing and quality automatically:
+LibriScribe 0.5.0 includes three systems that close the loop between writing and quality automatically:
 
 *   **`NarrativeGraphBuilder`:** Extracts structured narrative facts (entities, predicates, values) from each chapter after it is written. Facts are persisted in `narrative_graph.json` and survive partial runs.
 *   **`InvariantChecker`:** Before each scene is generated, detects hard and soft violations (dead characters reappearing, physical actions by injured characters, destroyed locations revisited) and injects a `NARRATIVE CONSTRAINTS:` block into the scene prompt.

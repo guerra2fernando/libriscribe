@@ -486,6 +486,18 @@ def test_local_index_rebuild_modes_and_keyword_fallback(tmp_path: Path, monkeypa
     assert error.value.code == "invalid_argument"
 
 
+def test_cli_search_rejects_unsupported_mode():
+    from typer.testing import CliRunner
+    from libriscribe.main import app
+
+    result = CliRunner().invoke(
+        app,
+        ["retrieval", "search", "--project", "Novel", "--query", "door", "--mode", "vector"],
+    )
+    assert result.exit_code != 0
+    assert "Invalid value" in result.output
+
+
 def test_stdio_initialize_list_tools_and_call_tools(tmp_path: Path):
     make_project(tmp_path)
 
