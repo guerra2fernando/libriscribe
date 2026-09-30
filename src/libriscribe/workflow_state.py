@@ -98,7 +98,10 @@ def inspect_project_progress(
         or stage_statuses.get("concept") == "complete"
     )
 
-    characters_required = project_knowledge_base.get("num_characters", 0) > 0
+    num_characters = project_knowledge_base.get("num_characters", 0)
+    if isinstance(num_characters, tuple):
+        num_characters = max(num_characters) if num_characters else 0
+    characters_required = isinstance(num_characters, int) and num_characters > 0
     characters_complete = (
         (not characters_required)
         or has_character_data(project_dir, project_knowledge_base)

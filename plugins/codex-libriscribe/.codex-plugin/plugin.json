@@ -1,0 +1,7 @@
+{
+  "name": "libriscribe",
+  "version": "1.0.0",
+  "description": "Local LibriScribe book project workflows over stdio MCP",
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json"
+}

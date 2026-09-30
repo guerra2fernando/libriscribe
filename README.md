@@ -130,6 +130,9 @@ graph TD
 *   **Advanced-mode fields reach all prompts:** `inspired_by`, `key_takeaways`, `research_question`, and genre-specific Q&A are injected into outline and scene prompts.
 *   **Character & worldbuilding context in scene writing:** Full profiles and key worldbuilding fields are prepended to every scene prompt.
 
+### Local MCP integrations
+LibriScribe also provides a local MCP server and plugins for Claude Code and Codex. See the [local integrations guide](https://guerra2fernando.github.io/libriscribe/local-integrations) for installation, configuration, and tool usage.
+
 ---
 
 ## 🚀 Quickstart

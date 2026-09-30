@@ -51,6 +51,9 @@ class LLMClient:
         self.model = self.default_model
         self.cost_tracker = CostTracker()
         self.request_fallback_chain: Optional[list[str]] = None
+        # Exposed as a bounded classification for workflow facades. Provider
+        # details remain in local logs and are never returned to tool callers.
+        self.last_failure_type: str | None = None
 
     def _get_client_for_provider(self, provider: str):
         if provider in self._client_cache:
@@ -214,6 +217,7 @@ class LLMClient:
         language: str = "English",
         require_valid_json: bool = False,
     ) -> str:
+        self.last_failure_type = None
         prepared_prompt = self._prepare_prompt(prompt, language)
         routes = build_fallback_route_chain(
             primary_provider=self.llm_provider,
@@ -269,6 +273,7 @@ class LLMClient:
                             "Fallback succeeded: using %s after previous route failure.",
                             route.label,
                         )
+                    self.last_failure_type = None
                     return response_text
                 except Exception as exc:
                     last_error = exc
@@ -299,9 +304,11 @@ class LLMClient:
                         "LLM generation failed for %s with no further fallback available.",
                         route.label,
                     )
+                    self.last_failure_type = failure_type
                     return ""
 
         if last_error:
+            self.last_failure_type = self._classify_exception(last_error)
             logger.error(
                 "LLM generation failed after exhausting fallback routes: %s", last_error
             )

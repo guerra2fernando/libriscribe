@@ -29,6 +29,7 @@ from libriscribe.knowledge_base import (  # Import the new class
     ProjectKnowledgeBase,
 )
 from libriscribe.settings import Settings
+from libriscribe.service import LibriScribeService, ServiceError
 from libriscribe.utils.editor import open_file_in_editor
 from libriscribe.utils.model_routing import parse_fallback_chain_string
 from libriscribe.workflow_state import ProjectProgress, inspect_project_progress
@@ -1502,21 +1503,21 @@ def search(
     top_k: int = typer.Option(6, "--top-k", "-k", help="Number of results to return"),
 ):
     """Queries the local retrieval index."""
-    _load_retrieval_project(project)
-    project_manager.initialize_retrieval()
+    try:
+        result = LibriScribeService().search_project(project, query, top_k, mode)
+    except ServiceError as exc:
+        console.print(f"[red]Search failed ({exc.code}): {exc.message}[/red]")
+        raise typer.Exit(code=1) from None
 
-    console.print(f"[cyan]Searching in '{project}' for:[/cyan] [bold]'{query}'[/bold] [cyan](mode: {mode}, top_k: {top_k})...[/cyan]")
-    results = project_manager.search_service.search(query, mode=mode, top_k=top_k)
-
-    if not results:
+    if not result["matches"]:
         console.print("[yellow]No results found.[/yellow]")
         return
 
-    console.print(f"\n[green]Found {len(results)} results:[/green]")
-    for i, res in enumerate(results, 1):
-        console.print(f"\n[bold]{i}. {res.text[:80]}[/bold] (Score: {res.score:.4f}, Type: {res.source_type})")
-        snippet = res.text[:200] + "..." if len(res.text) > 200 else res.text
-        console.print(f"   [dim]{snippet}[/dim]")
+    console.print(f"\n[green]Found {result['count']} results:[/green]")
+    for i, match in enumerate(result["matches"], 1):
+        reference = f" Chapter {match['chapter_number']}" if match["chapter_number"] is not None else ""
+        console.print(f"\n[bold]{i}. {match['source_type']}{reference}[/bold] (Score: {match['score']:.4f})")
+        console.print(f"   [dim]{match['excerpt']}[/dim]")
 
 
 @retrieval_app.command()
@@ -1587,9 +1588,19 @@ def narrative_check(
     chapter: int = typer.Option(..., "--chapter", "-c", help="Chapter number"),
 ) -> None:
     """Runs InvariantChecker on a chapter's scenes and prints violations."""
-    _load_narrative_project(project)
-    console.print(f"[cyan]Checking narrative violations for chapter {chapter}...[/cyan]")
-    project_manager.check_narrative_violations(chapter)
+    try:
+        result = LibriScribeService().check_narrative(project, chapter)
+    except ServiceError as exc:
+        console.print(f"[red]Narrative check failed ({exc.code}): {exc.message}[/red]")
+        raise typer.Exit(code=1) from None
+    for violation in result["violations"]:
+        tag = "[red]HARD[/red]" if violation["severity"] == "hard" else "[yellow]SOFT[/yellow]"
+        console.print(f"  {tag} Scene {violation['scene_number']} — {violation['description']}")
+        console.print(f"       [dim]Evidence (ch{violation['established_chapter']}): '{violation['evidence']}'[/dim]")
+    if result["count"] == 0:
+        console.print(f"[green]No narrative violations found for chapter {chapter}.[/green]")
+    else:
+        console.print(f"\n[bold]{result['count']} violation(s) found for chapter {chapter}.[/bold]")
 
 
 app.add_typer(narrative_app, name="narrative")

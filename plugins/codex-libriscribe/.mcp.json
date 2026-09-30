@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "libriscribe": {
+      "command": "python",
+      "args": ["-m", "libriscribe.mcp_server"]
+    }
+  }
+}

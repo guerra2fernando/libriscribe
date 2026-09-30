@@ -1,0 +1,8 @@
+{
+  "name": "libriscribe",
+  "version": "1.0.0",
+  "description": "Local LibriScribe book project workflows over stdio MCP",
+  "author": {
+    "name": "LibriScribe project"
+  }
+}

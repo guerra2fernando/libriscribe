@@ -16,3 +16,4 @@ requests
 tenacity
 rich
 pick
+mcp>=1.9,<2

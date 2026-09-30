@@ -1,0 +1,20 @@
+{
+  "name": "libriscribe-local",
+  "interface": {
+    "displayName": "LibriScribe Local Plugins"
+  },
+  "plugins": [
+    {
+      "name": "libriscribe",
+      "source": {
+        "source": "local",
+        "path": "./plugins/codex-libriscribe"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

@@ -23,11 +23,13 @@ setup(
         "boto3",
         "rich",
         "pick",
+        "mcp>=1.9,<2",
     ],
     package_data={"libriscribe.prompt_templates": ["*.yml"]},
     entry_points={
         "console_scripts": [
             "libriscribe=libriscribe.main:app",  # Updated entry point
+            "libriscribe-mcp=libriscribe.mcp_server:main",
         ],
     },
 )
