@@ -405,12 +405,12 @@ All global execution costs and API calls are written directly to your workspace:
 - [x] **Narrative CLI**: `narrative rebuild`, `narrative check`, `quality` commands
 
 ### 🔍 Local Retrieval & Integrations
-- [x] **Core Scaffolding & Local Keyword Retrieval** (Phase 0 + Phase 1)
+- [x] **Core Scaffolding & Local Keyword Retrieval**
 - [x] **Local Entity Cross-Referencing & BM25/TF-IDF Fallback Search**
-- [x] **Local stdio MCP Server & Claude Code/Codex Plugins** (Phase 1.5)
-- [x] **Phase 2 — Local Writing Workflow**: Structured local project creation, safe user-authored chapter revisions, generated-artifact checkpoints, and explicit progress and recovery guidance.
-- [ ] **Phase 3 — Local Semantic & Hybrid Search**: Optional on-device embeddings, hybrid keyword/semantic ranking, and clear index management. Keep keyword search usable without extra dependencies.
-- [ ] **Phase 4 — Quality & Release Polish**: Benchmark writing and retrieval quality with reproducible fixtures, improve export reliability, and test installation and plugin workflows on supported platforms.
+- [x] **Local stdio MCP Server & Claude Code/Codex Plugins**
+- [x] **Local Writing Workflow**: Structured local project creation, safe user-authored chapter revisions, generated-artifact checkpoints, and explicit progress and recovery guidance.
+- [ ] **Local Semantic & Hybrid Search**: Optional on-device embeddings, hybrid keyword/semantic ranking, and clear index management. Keep keyword search usable without extra dependencies.
+- [ ] **Quality & Release Polish**: Benchmark writing and retrieval quality with reproducible fixtures, improve export reliability, and test installation and plugin workflows on supported platforms.
 
 LibriScribe's MCP integration is local-only. Remote MCP hosting, public ChatGPT plugin submission, cloud vector databases, and multi-user account infrastructure are not planned.
 
