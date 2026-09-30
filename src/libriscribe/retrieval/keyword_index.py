@@ -22,6 +22,24 @@ def tokenize(text: str) -> list[str]:
     return re.findall(r"\b\w+\b", text.lower())
 
 
+def matches_filters(chunk: RetrievalChunk, filters: dict[str, Any] | None) -> bool:
+    if not filters:
+        return True
+    if "source_type" in filters:
+        allowed = filters["source_type"]
+        source_matches = chunk.source_type in allowed if isinstance(allowed, list) else chunk.source_type == allowed
+        if not source_matches:
+            return False
+    if "chapter_number" in filters and chunk.chapter_number != filters["chapter_number"]:
+        return False
+    if "characters" in filters:
+        requested = filters["characters"]
+        character_matches = any(name in chunk.characters for name in requested) if isinstance(requested, list) else requested in chunk.characters
+        if not character_matches:
+            return False
+    return True
+
+
 class FallbackTFIDFIndex:
     """A pure-Python TF-IDF ranker fallback when rank-bm25 is unavailable."""
 
@@ -145,34 +163,8 @@ class KeywordIndex:
             if not chunk:
                 continue
 
-            # Apply metadata filters
-            if filters:
-                match = True
-                # Match source_type
-                if "source_type" in filters:
-                    allowed_types = filters["source_type"]
-                    if isinstance(allowed_types, list):
-                        if chunk.source_type not in allowed_types:
-                            match = False
-                    elif chunk.source_type != allowed_types:
-                        match = False
-
-                # Match chapter_number
-                if "chapter_number" in filters:
-                    if chunk.chapter_number != filters["chapter_number"]:
-                        match = False
-
-                # Match characters
-                if "characters" in filters:
-                    req_chars = filters["characters"]
-                    if isinstance(req_chars, list):
-                        if not any(req_char in chunk.characters for req_char in req_chars):
-                            match = False
-                    elif req_chars not in chunk.characters:
-                        match = False
-
-                if not match:
-                    continue
+            if not matches_filters(chunk, filters):
+                continue
 
             score = float(scores[i])
             if score > 0.0 or query.lower() in chunk.text.lower():

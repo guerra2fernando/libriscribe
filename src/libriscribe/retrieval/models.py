@@ -34,6 +34,8 @@ class RetrievalConfig(BaseModel):
     max_context_tokens: int = 1800
     embedding_provider: EmbeddingProviderType = EmbeddingProviderType.SENTENCE_TRANSFORMERS
     embedding_model: str = "all-MiniLM-L6-v2"
+    embedding_local_files_only: bool = True
+    hybrid_keyword_weight: float = Field(default=0.5, ge=0.0, le=1.0)
     chunk_size: int = 800
     chunk_overlap: int = 120
     include_chapter_text: bool = True

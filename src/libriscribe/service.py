@@ -447,8 +447,8 @@ class LibriScribeService:
             raise ServiceError("invalid_argument", "query must contain 1 to 2000 non-whitespace characters.")
         if isinstance(top_k, bool) or not isinstance(top_k, int) or not 1 <= top_k <= 20:
             raise ServiceError("invalid_argument", "top_k must be between 1 and 20.")
-        if mode != "keyword":
-            raise ServiceError("unsupported_mode", "Only local keyword search is currently supported.")
+        if not isinstance(mode, str) or mode not in {"keyword", "semantic", "hybrid"}:
+            raise ServiceError("unsupported_mode", "mode must be keyword, semantic, or hybrid.")
         manager, path, kb = self._manager(project)
         if not kb.retrieval.enabled:
             raise ServiceError("capability_disabled", "Retrieval is disabled for this project.")
@@ -458,14 +458,20 @@ class LibriScribeService:
             retrieval_dir.relative_to(path)
             index_file = retrieval_dir / "keyword_index.json"
             index_file.resolve(strict=True).relative_to(path)
+            if mode in {"semantic", "hybrid"}:
+                semantic_file = retrieval_dir / "semantic_index.json"
+                semantic_file.resolve(strict=True).relative_to(path)
         except (OSError, ValueError):
-            raise ServiceError("index_unavailable", "The configured local retrieval index is outside the project or unavailable.") from None
+            raise ServiceError("index_unavailable", "The configured local retrieval index is outside the project or unavailable. Check its path and rebuild it if needed.") from None
         if not index_file.is_file():
             raise ServiceError("index_unavailable", "The local retrieval index is unavailable; search does not rebuild indexes.")
         try:
             from libriscribe.retrieval.search_service import SearchServiceImpl
             search = SearchServiceImpl(path, kb.retrieval)
             results = search.search(query.strip(), mode=mode, top_k=top_k)
+        except RuntimeError as exc:
+            logger.info("Optional semantic retrieval is unavailable: %s", exc)
+            raise ServiceError("semantic_unavailable", str(exc)) from None
         except Exception:
             logger.exception("Local project search failed")
             raise ServiceError("index_unavailable", "The local retrieval index could not be read.") from None
@@ -480,6 +486,42 @@ class LibriScribeService:
                 "excerpt_truncated": len(result.text) > 800,
             })
         return {"project": project, "query": query.strip(), "mode": mode, "matches": matches, "count": len(matches)}
+
+    def rebuild_project_index(
+        self, project: str, *, mode: str | None = None, embedding_model: str | None = None,
+        hybrid_keyword_weight: float | None = None,
+    ) -> dict[str, Any]:
+        """Rebuild local project indexes, optionally selecting the semantic mode/model."""
+        path, kb = self._resolve_project(project)
+        from libriscribe.retrieval.models import RetrievalMode
+        config = kb.retrieval.model_copy(deep=True)
+        if mode is None and config.mode == RetrievalMode.DISABLED:
+            config.mode = RetrievalMode.KEYWORD
+        if mode is not None:
+            if not isinstance(mode, str) or mode not in {"keyword", "semantic", "hybrid"}:
+                raise ServiceError("invalid_argument", "mode must be keyword, semantic, or hybrid.")
+            config.mode = RetrievalMode(mode)
+        if embedding_model is not None:
+            if not isinstance(embedding_model, str) or not embedding_model.strip() or len(embedding_model) > 500:
+                raise ServiceError("invalid_argument", "embedding_model must contain 1 to 500 characters.")
+            config.embedding_model = embedding_model.strip()
+        if hybrid_keyword_weight is not None:
+            if isinstance(hybrid_keyword_weight, bool) or not isinstance(hybrid_keyword_weight, (int, float)) or not 0.0 <= hybrid_keyword_weight <= 1.0:
+                raise ServiceError("invalid_argument", "hybrid_keyword_weight must be between 0 and 1.")
+            config.hybrid_keyword_weight = float(hybrid_keyword_weight)
+        config.enabled = True
+        try:
+            from libriscribe.retrieval.index_manager import IndexManager
+            IndexManager(kb, path, config).rebuild_index()
+            kb.retrieval = config
+            kb.save_to_file(str(path / "project_data.json"))
+        except RuntimeError as exc:
+            logger.info("Local retrieval index rebuild could not load its optional embedder: %s", exc)
+            raise ServiceError("semantic_unavailable", str(exc)) from None
+        except Exception:
+            logger.exception("Local project index rebuild failed")
+            raise ServiceError("index_rebuild_failed", "The local retrieval index could not be rebuilt; existing searchable artifacts were retained where possible.") from None
+        return {"project": project, "mode": config.mode.value, "status": "complete"}
 
     def check_narrative(self, project: str, chapter_number: int) -> dict[str, Any]:
         number = self._positive_chapter(chapter_number)
@@ -574,6 +616,35 @@ class LibriScribeService:
         except OSError:
             raise ServiceError("write_failed", f"Could not atomically publish {target.name}; the previous artifact was preserved.") from None
         return LibriScribeService._verify_artifact(target)
+
+    @staticmethod
+    def _promote_many(staged_artifacts: list[tuple[Path, Path]], backup_dir: Path) -> list[dict[str, Any]]:
+        """Publish a related export set together and restore old files on failure."""
+        for staged, target in staged_artifacts:
+            LibriScribeService._verify_artifact(staged)
+            if target.is_symlink() or (target.exists() and not target.is_file()):
+                raise ServiceError("write_failed", f"Could not safely publish {target.name}; the previous artifact was preserved.")
+        backups: dict[Path, Path] = {}
+        published: list[Path] = []
+        try:
+            for _staged, target in staged_artifacts:
+                if target.exists():
+                    backup = backup_dir / f"{target.name}.previous"
+                    os.replace(target, backup)
+                    backups[target] = backup
+            for staged, target in staged_artifacts:
+                os.replace(staged, target)
+                published.append(target)
+        except OSError:
+            for target in published:
+                target.unlink(missing_ok=True)
+            for target, backup in backups.items():
+                if backup.exists():
+                    os.replace(backup, target)
+            raise ServiceError("write_failed", "Could not publish the complete export set; previous artifacts were restored.") from None
+        for backup in backups.values():
+            backup.unlink(missing_ok=True)
+        return [LibriScribeService._verify_artifact(target) for _staged, target in staged_artifacts]
 
     @staticmethod
     def _verify_artifact(path: Path) -> dict[str, Any]:
@@ -678,10 +749,7 @@ class LibriScribeService:
                 ready = [(source, target) for source, target in staged_artifacts if source.exists()]
                 if not ready:
                     raise ServiceError("operation_failed", "Formatting did not create a nonempty manuscript artifact.")
-                # Validate every output before publishing either file.
-                for source, _target in ready:
-                    self._verify_artifact(source)
-                artifacts = [self._promote(source, target) for source, target in ready]
+                artifacts = self._promote_many(ready, stage)
                 return {"project": project, "format": extension, "status": "complete", "artifacts": artifacts}
             finally:
                 shutil.rmtree(stage, ignore_errors=True)

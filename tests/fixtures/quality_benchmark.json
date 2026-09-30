@@ -1,0 +1,17 @@
+{
+  "retrieval_documents": [
+    {"id": "castle", "text": "Mira crossed the old castle bridge and entered the stone keep."},
+    {"id": "garden", "text": "A quiet garden grew behind the northern wall, full of herbs."},
+    {"id": "archive", "text": "The archive held a map of the castle and its hidden passage."},
+    {"id": "storm", "text": "Rain covered the harbor as sailors tied their boats to the pier."}
+  ],
+  "retrieval_queries": [
+    {"query": "castle passage", "relevant_ids": ["castle", "archive"]},
+    {"query": "herbs garden", "relevant_ids": ["garden"]},
+    {"query": "boats harbor", "relevant_ids": ["storm"]}
+  ],
+  "writing_samples": [
+    "Mira opened the gate. Rain tapped against the iron roof. She listened for footsteps.",
+    "The archive smelled of dust and cedar. A narrow map rested beneath the lamp. Mira folded it carefully."
+  ]
+}

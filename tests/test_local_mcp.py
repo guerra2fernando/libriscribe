@@ -414,6 +414,7 @@ def test_plugin_json_and_mcp_contract_has_exactly_eleven_tools():
     assert "version" in schemas["get_chapter"]["properties"]
     assert "original, revised" in schemas["get_chapter"]["properties"]["version"]["description"]
     assert "keyword" in schemas["search_project"]["properties"]["mode"]["description"]
+    assert "sentence-transformers" in by_name_description(registered, "search_project")
     assert schemas["format_book"]["properties"]["format"]["type"] == "string"
     assert "md or pdf" in schemas["format_book"]["properties"]["format"]["description"]
     expected_properties = {
@@ -449,6 +450,40 @@ def test_plugin_json_and_mcp_contract_has_exactly_eleven_tools():
     ):
         payload = json.loads((root / relative).read_text(encoding="utf-8"))
         assert isinstance(payload, dict)
+
+
+def by_name_description(registered, name: str) -> str:
+    return next(tool.description for tool in registered if tool.name == name)
+
+
+def test_local_index_rebuild_modes_and_keyword_fallback(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    path, _kb = make_project(tmp_path)
+    service = service_for(tmp_path)
+    built = service.rebuild_project_index("Novel", mode="keyword", hybrid_keyword_weight=0.25)
+    assert built["mode"] == "keyword"
+    loaded_config = ProjectKnowledgeBase.load_from_file(str(path / "project_data.json"))
+    assert loaded_config is not None
+    assert loaded_config.retrieval.hybrid_keyword_weight == 0.25
+    index_file = path / ".libriscribe_retrieval" / "keyword_index.json"
+    original_index = index_file.read_bytes()
+    assert service.search_project("Novel", "Local Book")["mode"] == "keyword"
+
+    from libriscribe.retrieval.semantic_index import SemanticIndex
+
+    def unavailable(self):
+        raise RuntimeError("fixture has no local model")
+
+    monkeypatch.setattr(SemanticIndex, "_load_model", unavailable)
+    with pytest.raises(ServiceError) as error:
+        service.rebuild_project_index("Novel", mode="hybrid")
+    assert error.value.code == "semantic_unavailable"
+    assert index_file.read_bytes() == original_index
+    with pytest.raises(ServiceError) as error:
+        service.search_project("Novel", "anything", mode="remote")
+    assert error.value.code == "unsupported_mode"
+    with pytest.raises(ServiceError) as error:
+        service.rebuild_project_index("Novel", mode="keyword", hybrid_keyword_weight=1.5)
+    assert error.value.code == "invalid_argument"
 
 
 def test_stdio_initialize_list_tools_and_call_tools(tmp_path: Path):

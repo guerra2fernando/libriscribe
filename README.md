@@ -111,6 +111,8 @@ graph TD
 *   **Automatic Parsing & Chunking:** Auto-extracts character profiles, worldbuilding, summaries, and full chapters into searchable tokens.
 *   **Exact Tag-Based Filters:** Constrain queries to specific documents using exact filters.
 *   **Robust Fallback Keyword Search:** Sub-linear TF-IDF pure-Python fallback if `rank-bm25` is not installed — zero ML dependencies.
+*   **Optional Local Semantic & Hybrid Search:** Sentence-transformers runs embeddings on-device; keyword search remains the default and requires no embedding package or model.
+*   **Confined Project Indexes:** Search indexes remain under the project directory, with traversal and symlink escapes rejected.
 *   **Automatic Cross-Reference Graphing:** Dynamically indexes co-occurrences of key characters and locations across all chapter chunks.
 
 ### 7. Narrative Quality Layer 📖
@@ -409,8 +411,10 @@ All global execution costs and API calls are written directly to your workspace:
 - [x] **Local Entity Cross-Referencing & BM25/TF-IDF Fallback Search**
 - [x] **Local stdio MCP Server & Claude Code/Codex Plugins**
 - [x] **Local Writing Workflow**: Structured local project creation, safe user-authored chapter revisions, generated-artifact checkpoints, and explicit progress and recovery guidance.
-- [ ] **Local Semantic & Hybrid Search**: Optional on-device embeddings, hybrid keyword/semantic ranking, and clear index management. Keep keyword search usable without extra dependencies.
-- [ ] **Quality & Release Polish**: Benchmark writing and retrieval quality with reproducible fixtures, improve export reliability, and test installation and plugin workflows on supported platforms.
+- [x] **Local Semantic & Hybrid Search**: Optional on-device embeddings, hybrid keyword/semantic ranking, and explicit project-local index management. Keyword search remains usable without embedding dependencies.
+- [x] **Quality & Release Polish**: Deterministic writing/retrieval diagnostics, safer manuscript export replacement, and local plugin configuration checks.
+
+See the [local retrieval and quality guide](docs/docs/retrieval-and-quality.md) for setup, index lifecycle, benchmark use, and known limitations.
 
 LibriScribe's MCP integration is local-only. Remote MCP hosting, public ChatGPT plugin submission, cloud vector databases, and multi-user account infrastructure are not planned.
 

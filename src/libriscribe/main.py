@@ -1478,12 +1478,22 @@ def _load_retrieval_project(project_name: str) -> None:
 
 
 @retrieval_app.command()
-def rebuild(project: str = typer.Option(..., "--project", "-p", help="Project name")):
-    """Forces a clean, complete rebuild of all local retrieval files and indexes."""
-    _load_retrieval_project(project)
-    console.print(f"[cyan]Rebuilding retrieval index for project '{project}'...[/cyan]")
-    project_manager.rebuild_retrieval_index()
-    console.print("[green]Rebuild complete![/green]")
+def rebuild(
+    project: str = typer.Option(..., "--project", "-p", help="Project name"),
+    mode: str | None = typer.Option(None, "--mode", help="Index mode: keyword, semantic, or hybrid."),
+    embedding_model: str | None = typer.Option(None, "--embedding-model", help="Locally available sentence-transformers model name or path (semantic/hybrid only)."),
+    keyword_weight: float | None = typer.Option(None, "--keyword-weight", min=0.0, max=1.0, help="Keyword share of hybrid ranking, from 0 to 1."),
+):
+    """Rebuild the local index. Semantic modes use local CPU/GPU compute and have no embedding-provider API charge."""
+    try:
+        result = LibriScribeService().rebuild_project_index(
+            project, mode=mode, embedding_model=embedding_model,
+            hybrid_keyword_weight=keyword_weight,
+        )
+    except ServiceError as exc:
+        console.print(f"[red]Rebuild failed ({exc.code}): {exc.message}[/red]")
+        raise typer.Exit(code=1) from None
+    console.print(f"[green]Rebuild complete ({result['mode']})![/green]")
 
 
 @retrieval_app.command()
@@ -1499,7 +1509,7 @@ def refresh(project: str = typer.Option(..., "--project", "-p", help="Project na
 def search(
     project: str = typer.Option(..., "--project", "-p", help="Project name"),
     query: str = typer.Option(..., "--query", "-q", help="Search query"),
-    mode: str = typer.Option("keyword", "--mode", "-m", help="Search mode (keyword)"),
+    mode: str = typer.Option("keyword", "--mode", "-m", help="Search mode: keyword, semantic, or hybrid."),
     top_k: int = typer.Option(6, "--top-k", "-k", help="Number of results to return"),
 ):
     """Queries the local retrieval index."""

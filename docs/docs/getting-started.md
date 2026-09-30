@@ -35,7 +35,9 @@ This guide walks you through installing LibriScribe, configuring model defaults,
    pip install -e .
    ```
 
-   Editable install is convenient if you plan to customize prompts or work on the codebase locally.
+Editable install is convenient if you plan to customize prompts or work on the codebase locally.
+
+Optional local semantic search can be installed separately with `pip install -e ".[semantic]"`. It runs the sentence-transformers model on your device; no embedding API key or hosted vector service is used. Keyword search does not need this extra. Semantic mode uses local-only model loading by default, so place the model in the local Hugging Face cache or provide a local model path before rebuilding a semantic index.
 
 3. **Create your `.env` file**
 

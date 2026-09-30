@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from libriscribe.knowledge_base import ProjectKnowledgeBase
 
-from libriscribe.retrieval.config import get_retrieval_dir
+from libriscribe.retrieval.config import get_retrieval_dir, validate_index_path
 from libriscribe.retrieval.models import RetrievalDocument, RetrievalChunk, RetrievalConfig
 from libriscribe.retrieval.document_builder import DocumentBuilder
 from libriscribe.retrieval.chunking import chunk_document
@@ -30,11 +30,12 @@ class IndexManager:
         self.retrieval_dir = get_retrieval_dir(project_dir, self.config)
 
         # Paths
-        self.docs_file = self.retrieval_dir / "documents.jsonl"
-        self.chunks_file = self.retrieval_dir / "chunks.jsonl"
-        self.keyword_index_file = self.retrieval_dir / "keyword_index.json"
-        self.xref_index_file = self.retrieval_dir / "cross_references.json"
-        self.manifest_file = self.retrieval_dir / "manifests" / "index_state.json"
+        self.docs_file = validate_index_path(project_dir, self.retrieval_dir / "documents.jsonl")
+        self.chunks_file = validate_index_path(project_dir, self.retrieval_dir / "chunks.jsonl")
+        self.keyword_index_file = validate_index_path(project_dir, self.retrieval_dir / "keyword_index.json")
+        self.semantic_index_file = validate_index_path(project_dir, self.retrieval_dir / "semantic_index.json")
+        self.xref_index_file = validate_index_path(project_dir, self.retrieval_dir / "cross_references.json")
+        self.manifest_file = validate_index_path(project_dir, self.retrieval_dir / "manifests" / "index_state.json")
 
         # Indexes
         self.keyword_index = KeywordIndex(project_dir)
@@ -59,18 +60,29 @@ class IndexManager:
             )
             chunks.extend(doc_chunks)
 
-        # 3. Persist documents and chunks to JSONL
-        self._write_jsonl(self.docs_file, [d.model_dump(mode="json") for d in docs])
-        self._write_jsonl(self.chunks_file, [c.model_dump(mode="json") for c in chunks])
-
-        # 4. Build and save Keyword Index
+        # Build every configured index before replacing any existing index files.
         self.keyword_index.build(chunks)
-        self.keyword_index.save_to_file(self.keyword_index_file)
+        semantic_index = None
+        if self.config.mode.value in {"semantic", "hybrid"}:
+            from libriscribe.retrieval.semantic_index import SemanticIndex
+            semantic_index = SemanticIndex(
+                self.config.embedding_model,
+                local_files_only=self.config.embedding_local_files_only,
+            )
+            semantic_index.build(chunks)
 
-        # 5. Build and save Cross Reference Index
+        # Prepare the cross-reference index before committing files.
         entity_defs = self._get_entity_definitions()
         self.xref_index.build(chunks, entity_defs)
+
+        self._write_jsonl(self.docs_file, [d.model_dump(mode="json") for d in docs])
+        self._write_jsonl(self.chunks_file, [c.model_dump(mode="json") for c in chunks])
+        self.keyword_index.save_to_file(self.keyword_index_file)
         self.xref_index.save_to_file(self.xref_index_file)
+        if semantic_index is not None:
+            semantic_index.save_to_file(self.semantic_index_file)
+        else:
+            self.semantic_index_file.unlink(missing_ok=True)
 
         # 6. Save build manifest
         self._write_manifest(docs)
@@ -80,7 +92,9 @@ class IndexManager:
 
         Returns True if a rebuild/update was executed, False otherwise.
         """
-        if not self.manifest_file.exists() or not self.keyword_index_file.exists() or not self.xref_index_file.exists():
+        if (not self.manifest_file.exists() or not self.keyword_index_file.exists()
+                or not self.xref_index_file.exists()
+                or (self.config.mode.value in {"semantic", "hybrid"} and not self.semantic_index_file.exists())):
             self.rebuild_index()
             return True
 
@@ -117,6 +131,21 @@ class IndexManager:
         """Loads fitted indexes from local JSON files."""
         self.keyword_index.load_from_file(self.keyword_index_file)
         self.xref_index.load_from_file(self.xref_index_file)
+        if self.config.mode.value in {"semantic", "hybrid"}:
+            from libriscribe.retrieval.semantic_index import SemanticIndex
+            self.semantic_index = SemanticIndex(
+                self.config.embedding_model,
+                local_files_only=self.config.embedding_local_files_only,
+            )
+            try:
+                self.semantic_index.load_from_file(self.semantic_index_file)
+                self.semantic_error = None
+            except (OSError, ValueError, json.JSONDecodeError) as exc:
+                self.semantic_index = None
+                self.semantic_error = str(exc)
+        else:
+            self.semantic_index = None
+            self.semantic_error = None
 
     def _get_entity_definitions(self) -> dict[str, str]:
         """Assembles the dictionary of entity names and types from characters and worldbuilding."""

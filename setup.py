@@ -26,6 +26,7 @@ setup(
         "mcp>=1.9,<2",
     ],
     package_data={"libriscribe.prompt_templates": ["*.yml"]},
+    extras_require={"semantic": ["sentence-transformers>=3.0,<6"]},
     entry_points={
         "console_scripts": [
             "libriscribe=libriscribe.main:app",  # Updated entry point

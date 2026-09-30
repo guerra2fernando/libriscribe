@@ -102,8 +102,8 @@ def replace_chapter_text(project: str, chapter_number: Annotated[int, Field(desc
     return _invoke(lambda: service.replace_chapter_text(project, chapter_number, version, text, expected_revision_token))
 
 
-@mcp.tool(name="search_project", description="Search an existing local keyword index. Does not rebuild it. Fails clearly when retrieval is disabled or its index is unavailable.", annotations=READ, structured_output=True)
-def search_project(project: str, query: Annotated[str, Field(description="Nonempty query, up to 2,000 characters.")], top_k: Annotated[int, Field(description="Number of matches from 1 to 20.")] = 6, mode: Annotated[str, Field(description="Currently supported mode: keyword.")] = "keyword") -> dict[str, Any]:
+@mcp.tool(name="search_project", description="Search an existing project-local index with keyword, semantic, or hybrid ranking. Does not rebuild indexes. Semantic and hybrid modes require the optional sentence-transformers extra and a locally available model; embeddings run on-device with local compute cost and no provider API calls.", annotations=READ, structured_output=True)
+def search_project(project: str, query: Annotated[str, Field(description="Nonempty query, up to 2,000 characters.")], top_k: Annotated[int, Field(description="Number of matches from 1 to 20.")] = 6, mode: Annotated[str, Field(description="Ranking mode: keyword (no embedding dependency), semantic, or hybrid; semantic modes require a local embedding index.")]= "keyword") -> dict[str, Any]:
     return _invoke(lambda: service.search_project(project, query, top_k, mode))
 
 
