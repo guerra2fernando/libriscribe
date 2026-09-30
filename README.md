@@ -404,17 +404,15 @@ All global execution costs and API calls are written directly to your workspace:
 - [x] **PacingAgent — 5-Axis Arc Analysis**: tension escalation, act structure, chapter length consistency, emotional beat variety, narrative momentum; PACING GUIDANCE injected into editor prompt
 - [x] **Narrative CLI**: `narrative rebuild`, `narrative check`, `quality` commands
 
-### 🔍 Vector Store & Search Enhancement
+### 🔍 Local Retrieval & Integrations
 - [x] **Core Scaffolding & Local Keyword Retrieval** (Phase 0 + Phase 1)
 - [x] **Local Entity Cross-Referencing & BM25/TF-IDF Fallback Search**
-- [ ] **Multi-Vector Database Support**: ChromaDB, MongoDB Vector Search, Pinecone, Weaviate
-- [ ] **Advanced Search Features**: Semantic Search, Hybrid Search (Keywords + Semantic), Cross-Reference Search
-- [ ] **Embedding Models Integration**: Multiple Embedding Model Support, Custom Embedding Training
+- [x] **Local stdio MCP Server & Claude Code/Codex Plugins** (Phase 1.5)
+- [x] **Phase 2 — Local Writing Workflow**: Structured local project creation, safe user-authored chapter revisions, generated-artifact checkpoints, and explicit progress and recovery guidance.
+- [ ] **Phase 3 — Local Semantic & Hybrid Search**: Optional on-device embeddings, hybrid keyword/semantic ranking, and clear index management. Keep keyword search usable without extra dependencies.
+- [ ] **Phase 4 — Quality & Release Polish**: Benchmark writing and retrieval quality with reproducible fixtures, improve export reliability, and test installation and plugin workflows on supported platforms.
 
-### 🔐 Authentication & Authorization
-- [ ] **Cerbos Implementation**: Role-Based Access Control (RBAC), Attribute-Based Access Control (ABAC)
-- [ ] **User Management System**: User Registration, Social Auth, Multi-Factor Auth, Session Management
-- [ ] **Security Features**: Audit Logging, Rate Limiting, API Key Management
+LibriScribe's MCP integration is local-only. Remote MCP hosting, public ChatGPT plugin submission, cloud vector databases, and multi-user account infrastructure are not planned.
 
 ---
 

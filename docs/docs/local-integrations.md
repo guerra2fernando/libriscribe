@@ -1,6 +1,6 @@
 # Local MCP integrations
 
-LibriScribe includes a local stdio MCP server and local plugin packages for Claude Code and Codex. Both launch the installed `libriscribe.mcp_server` package and expose the same nine tools. These integrations are intended for local clients. A local stdio server is not suitable for public ChatGPT plugin submission; that requires a reachable HTTP service and a separate authentication and authorization design.
+LibriScribe includes a local stdio MCP server and local plugin packages for Claude Code and Codex. Both launch the installed `libriscribe.mcp_server` package and expose the same eleven tools. The MCP server runs on the user's machine and accesses only the configured local projects directory. Remote MCP hosting and public ChatGPT plugin submission are outside the project's roadmap. Generation and PDF formatting tools may call the LLM provider configured by the user.
 
 ## Install and configure
 
@@ -66,11 +66,15 @@ The repository catalog at `.agents/plugins/marketplace.json` points to `plugins/
 
 ## Example workflows
 
+Create: call `create_project` with a project identifier, title, and any desired metadata. It creates an empty project with `project_data.json` and initial status, refuses duplicate identifiers, and makes no LLM call. Then inspect it with `list_projects` and `get_project_status`.
+
+Manual edit: call `get_chapter` and retain its `revision_token`, then call `replace_chapter_text` with the complete replacement text and that token. It edits an existing original or revised file atomically, rejects stale tokens, and makes no LLM call. Read the chapter again to inspect the saved text and new token.
+
+Generated write: inspect status and source files first. Then run one of `generate_outline`, `write_chapter`, `edit_chapter`, or `format_book`, and inspect its artifact plus `get_project_status`. Writes default to refusing overwrite. New generated files are staged inside the project and promoted only after validation. PDF formatting may call the configured provider and incur cost; Markdown formatting is local. Outline generation, chapter writing, and AI chapter editing may also call the configured provider and incur cost. On failure or a possibly interrupted run, read the operation and recovery guidance, inspect the artifact, and choose whether to retry one operation explicitly.
+
 Read: call `list_projects`, choose a returned `project` identifier, call `get_project_status`, then call `get_chapter` (page with `start_char` and `max_chars`) or `search_project`. Retrieval search reports disabled or missing indexes explicitly and does not build one. `check_narrative` reads the existing graph and makes no LLM call.
 
-Write: inspect status and source files first; ask for explicit overwrite intent if the target already exists. Then call one of `generate_outline`, `write_chapter`, `edit_chapter`, or `format_book`, and inspect its artifact plus `get_project_status`. Writes default to refusing overwrite. PDF formatting calls the configured provider to format PDF content; Markdown uses the local formatting agent, although the current manager requires provider initialization for its formatting path. Outline, chapter writing, and editing may also contact the configured provider.
-
-Tool errors have `{ "ok": false, "error": { "code", "message" } }`; successes have `{ "ok": true, "result": ... }`. Chapter text is paginated with explicit character offsets and a `has_more` flag. Project status and search results are intentionally compact.
+Tool errors have `{ "ok": false, "error": { "code", "message" } }`; successes have `{ "ok": true, "result": ... }`. Chapter text is paginated with explicit character offsets and a `has_more` flag, and includes a SHA-256 `revision_token`. Project status includes the latest service operation state (`complete`, `failed`, or `in_progress`, which may indicate interruption) and recovery guidance. Status files are backward-compatible with existing projects.
 
 ## Testing
 

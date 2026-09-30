@@ -30,6 +30,7 @@ class EditorAgent(Agent):
         chapter_number: int,
         pacing_guidance: str = "",
         quality_guidance: str = "",
+        output_path: str | None = None,
     ) -> None:
         """Edits a chapter and saves the revised version."""
         chapter_path = f"chapter_{chapter_number}.md"
@@ -120,7 +121,7 @@ class EditorAgent(Agent):
                     
             if revised_chapter:
                  #--- FIX: Save as chapter_{chapter_number}_revised.md ---
-                revised_chapter_path = str(Path(project_knowledge_base.project_dir) / f"chapter_{chapter_number}_revised.md")
+                revised_chapter_path = output_path or str(Path(project_knowledge_base.project_dir) / f"chapter_{chapter_number}_revised.md")
                 write_markdown_file(revised_chapter_path, revised_chapter)
                 console.print("[green]✅ Edited chapter saved![/green]")
             else:

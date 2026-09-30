@@ -1,6 +1,7 @@
 # src/libriscribe/agents/project_manager.py
 
 import logging
+from functools import wraps
 from pathlib import Path
 from typing import Any, cast
 
@@ -39,12 +40,26 @@ from libriscribe.utils.file_utils import (
 )
 from libriscribe.utils.llm_client import LLMClient
 from libriscribe.utils.model_routing import parse_fallback_chain_string
-from libriscribe.utils.project_status import update_stage_status
+from libriscribe.utils.project_status import ProjectWriteBusy, project_write_lock, update_stage_status
 from libriscribe.workflow_state import inspect_project_progress
 
 console = Console()
 
 logger = logging.getLogger(__name__)
+
+
+def _serialized_project_write(method):
+    """Share the service's OS lock for direct interactive CLI writes."""
+    @wraps(method)
+    def wrapped(self, *args, **kwargs):
+        if not self.project_dir or getattr(self, "_service_write_lock_held", False):
+            return method(self, *args, **kwargs)
+        try:
+            with project_write_lock(self.project_dir):
+                return method(self, *args, **kwargs)
+        except ProjectWriteBusy:
+            raise RuntimeError("Another LibriScribe write is already running for this project.") from None
+    return wrapped
 
 
 class ProjectManagerAgent:
@@ -163,7 +178,10 @@ class ProjectManagerAgent:
     def _mark_stage_failed(self, stage_name: str, message: str = "") -> None:
         if self.project_dir:
             _ = update_stage_status(
-                self.project_dir, stage_name, "failed", message=message
+                self.project_dir,
+                stage_name,
+                "failed",
+                message="Stage failed; inspect the local log.",
             )
 
     def _mark_stage_finished(self, stage_name: str) -> None:
@@ -408,11 +426,12 @@ class ProjectManagerAgent:
         except Exception:
             self.logger.exception("StyleResearchAgent failed; continuing without style profile.")
 
-    def generate_outline(self):
+    @_serialized_project_write
+    def generate_outline(self, output_path: str | None = None):
         """Generates a book outline."""
         self._mark_stage_started("outline")
         self.run_style_research()
-        self.run_agent("outliner")  # type: ignore
+        self.run_agent("outliner", output_path=output_path)  # type: ignore
         self.save_project_data()  # Save after update
         self._mark_stage_finished("outline")
 
@@ -430,7 +449,8 @@ class ProjectManagerAgent:
         self.save_project_data()  # save after update
         self._mark_stage_finished("worldbuilding")
 
-    def write_chapter(self, chapter_number: int):
+    @_serialized_project_write
+    def write_chapter(self, chapter_number: int, output_path: str | None = None):
         """Writes a specific chapter."""
         if not self.project_dir:
             raise ValueError("Project directory is not initialized.")
@@ -439,7 +459,7 @@ class ProjectManagerAgent:
         self.run_agent(
             "chapter_writer",
             chapter_number=chapter_number,
-            output_path=str(self.project_dir / f"chapter_{chapter_number}.md"),
+            output_path=output_path or str(self.project_dir / f"chapter_{chapter_number}.md"),
         )
         self.save_project_data()
         self._mark_stage_finished("chapters")
@@ -502,9 +522,10 @@ class ProjectManagerAgent:
             if typer.confirm("Do you want AI to refine the writing style?"):
                 self.edit_style(chapter_number)
 
-    def edit_chapter(self, chapter_number: int, pacing_guidance: str = "", quality_guidance: str = "") -> None:
+    @_serialized_project_write
+    def edit_chapter(self, chapter_number: int, pacing_guidance: str = "", quality_guidance: str = "", output_path: str | None = None) -> None:
         """Refines an existing chapter (Editor Agent)."""
-        self.run_agent("editor", chapter_number=chapter_number, pacing_guidance=pacing_guidance, quality_guidance=quality_guidance)
+        self.run_agent("editor", chapter_number=chapter_number, pacing_guidance=pacing_guidance, quality_guidance=quality_guidance, output_path=output_path)
         self.save_project_data()
 
     def run_pacing_analysis(self, chapter_numbers: list[int]) -> "PacingReport | None":
@@ -608,6 +629,7 @@ class ProjectManagerAgent:
         else:
             console.print(f"\n[bold]{total_violations} violation(s) found for chapter {chapter_number}.[/bold]")
 
+    @_serialized_project_write
     def format_book(self, output_path: str):
         """Formats the entire book into a single Markdown or PDF file.
         Robustly handles both original and revised chapters based on the project outline.
@@ -616,7 +638,7 @@ class ProjectManagerAgent:
             print("ERROR: Project directory not initialized.")
             return
 
-        self._mark_stage_started("formatting", output_path=output_path)
+        self._mark_stage_started("formatting", artifact=Path(output_path).name)
 
         if not self.project_knowledge_base:
             self._mark_stage_failed("formatting", "Project knowledge base not loaded.")
