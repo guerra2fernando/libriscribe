@@ -21,7 +21,7 @@
 
 **LibriScribe** revolutionizes book writing through a sophisticated multi-agent system. Specialized AI agents collaborate seamlessly to assist you from initial brainstorms and worldbuilding to draft generation, interactive editing, and local publication. 
 
-With our latest integration updates, LibriScribe supports **OpenRouter routing**, fully customizable **external YAML prompts**, automated **LLM cost tracking**, and a **self-healing JSON parser** for unmatched writing reliability.
+With our latest integration updates, LibriScribe supports **OpenRouter routing**, project-customizable **external YAML editor prompts**, automated **LLM cost tracking**, and a **self-healing JSON parser** for unmatched writing reliability.
 
 ![Libriscribe Demo](https://github.com/guerra2fernando/libriscribe/blob/main/docs/static/img/libriscribe.gif?raw=true)
 
@@ -89,8 +89,8 @@ graph TD
 *   **Full Backward Compatibility:** Swap models dynamically without breaking existing templates or agent behaviors.
 
 ### 2. External YAML Prompt Templates 📝
-*   **Fully Customizable Prompts:** 15 comprehensive agent templates isolated in `prompts/templates/`. Customize AI personas, vocabulary, and styles without editing python code.
-*   **Dynamic Loading:** Auto-detects custom prompt modifications and falls back gracefully to hardcoded prompts if any files are missing.
+*   **Project-Customizable Editor Prompt:** Customize the production editing prompt in `prompts/templates/editor.yml` without editing Python code.
+*   **Packaged Defaults and Overrides:** Templates ship with the package, while a project-level `prompts/templates/` copy or `LIBRISCRIBE_PROMPTS_DIR` override takes precedence.
 *   **Genre-Specific Personas:** Easily configure suspense, scientific accuracy, or business tones directly inside templates.
 
 ### 3. LLM Cost Optimization & Tracking 💰
@@ -250,11 +250,7 @@ Inspect and maintain the narrative consistency graph and prose quality reports:
 
 You can easily adjust the tone and focus of any writing agent. For example, to create a specialized Mystery Editor:
 
-1.  Copy the default editor template:
-    ```bash
-    cp prompts/templates/editor.yml prompts/templates/my-editor.yml
-    ```
-2.  Edit `prompts/templates/editor.yml` to specify custom instructions and cost settings:
+1.  Edit `prompts/templates/editor.yml` to specify custom instructions and cost settings:
     ```yaml
     name: "Mystery Editor"
     cost_tier: "medium"
@@ -382,7 +378,7 @@ your_project/
 
 All global execution costs and API calls are written directly to your workspace:
 *   📂 `llm_usage.jsonl` - Real-time spend tracking and performance logging.
-*   📂 `prompts/templates/` - External YAML files for 15+ specialized prompts.
+*   📂 `prompts/templates/` - Project-level YAML prompt overrides and bundled default templates.
 
 ---
 

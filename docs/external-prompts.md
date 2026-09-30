@@ -1,6 +1,6 @@
 # External Prompt Templates
 
-LibriScribe supports external YAML prompt templates, giving you full control over AI behavior.
+LibriScribe supports external YAML prompt templates. The production editor loads `editor.yml`; the remaining bundled templates document the prompt formats used by the agents and can be adopted as those agents are made configurable.
 
 ## Quick Start
 
@@ -11,9 +11,10 @@ ls prompts/templates/
 ```
 
 ### Customize a Template
-1. Copy: `cp prompts/templates/editor.yml prompts/templates/my-editor.yml`
+1. Edit `prompts/templates/editor.yml` in your project, or copy the packaged default there first
 2. Edit the template text and settings
-3. Templates are automatically detected and used
+3. Set `LIBRISCRIBE_PROMPTS_DIR` if the override is outside the project directory
+4. The production editor automatically uses the project override and falls back to the packaged template when no override is present
 
 ## Template Structure
 ```yaml

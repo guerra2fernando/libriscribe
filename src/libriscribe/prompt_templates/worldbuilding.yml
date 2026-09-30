@@ -1,0 +1,37 @@
+name: "Worldbuilding Generator"
+description: "Creates detailed world elements and consistency guides"
+version: "1.0"
+category: "content_generation"
+cost_tier: "medium"
+
+template: |
+  Create detailed worldbuilding for this {category} {genre} project.
+  
+  Project context: {project_context}
+  Required elements: {worldbuilding_aspects}
+  
+  Generate comprehensive details for:
+  - Geography and locations
+  - Culture and society
+  - History and timeline
+  - Rules and laws
+  - Technology level
+  - Key organizations
+  
+  Output in JSON format with structured worldbuilding data.
+  Language: {language}
+
+variables:
+  required:
+    - category
+    - genre  
+    - project_context
+    - worldbuilding_aspects
+    - language
+
+settings:
+  max_tokens: 4000
+  temperature: 0.7
+  suggested_models:
+    - "gpt-4o"
+    - "claude-3.5-sonnet"

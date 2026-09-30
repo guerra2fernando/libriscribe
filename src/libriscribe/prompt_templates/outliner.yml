@@ -1,0 +1,38 @@
+name: "Story Outliner"
+description: "Creates chapter and scene outlines for structured storytelling"
+version: "1.0"
+category: "planning"
+cost_tier: "medium"
+
+template: |
+  Create a detailed outline for this {genre} {category}.
+  
+  Story concept: {concept}
+  Book length: {book_length}
+  Target chapters: {max_chapters}
+  
+  Generate:
+  - Chapter-by-chapter breakdown
+  - Scene structure within chapters
+  - Plot progression and pacing
+  - Character development milestones
+  - Conflict escalation points
+  
+  Focus on strong narrative structure and engaging progression.
+  Language: {language}
+
+variables:
+  required:
+    - genre
+    - category
+    - concept
+    - book_length
+    - max_chapters
+    - language
+
+settings:
+  max_tokens: 3000
+  temperature: 0.6
+  suggested_models:
+    - "gpt-4o"
+    - "claude-3.5-sonnet"

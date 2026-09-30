@@ -20,9 +20,11 @@ setup(
         "tenacity",
         "anthropic",
         "google-genai>=2.7.0",
+        "boto3",
         "rich",
         "pick",
     ],
+    package_data={"libriscribe.prompt_templates": ["*.yml"]},
     entry_points={
         "console_scripts": [
             "libriscribe=libriscribe.main:app",  # Updated entry point

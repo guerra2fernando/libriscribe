@@ -1,4 +1,6 @@
 """External prompt template loader for LibriScribe."""
+import os
+from importlib import resources
 from pathlib import Path
 from typing import Any
 
@@ -8,11 +10,18 @@ import yaml
 class PromptLoader:
     """Loads and manages external prompt templates."""
 
-    def __init__(self, prompts_dir: str = "prompts"):
-        self.prompts_dir = Path(prompts_dir)
+    def __init__(self, prompts_dir: str | os.PathLike[str] | None = None):
+        configured_dir = prompts_dir or os.getenv("LIBRISCRIBE_PROMPTS_DIR") or "prompts"
+        self.prompts_dir = Path(configured_dir)
         self.templates_dir = self.prompts_dir / "templates"
         self.configs_dir = self.prompts_dir / "configs"
         self._cache: dict[str, dict[str, Any]] = {}
+
+    @staticmethod
+    def _packaged_template(prompt_name: str) -> resources.abc.Traversable:
+        return resources.files("libriscribe.prompt_templates").joinpath(
+            f"{prompt_name}.yml"
+        )
 
     def load_prompt(self, prompt_name: str) -> dict[str, Any]:
         """Load prompt template from YAML file."""
@@ -20,11 +29,15 @@ class PromptLoader:
             return self._cache[prompt_name]
 
         template_path = self.templates_dir / f"{prompt_name}.yml"
-        if not template_path.exists():
-            raise FileNotFoundError(f"Prompt template not found: {template_path}")
+        if template_path.exists():
+            prompt_text = template_path.read_text(encoding="utf-8")
+        else:
+            packaged_template = self._packaged_template(prompt_name)
+            if not packaged_template.is_file():
+                raise FileNotFoundError(f"Prompt template not found: {template_path}")
+            prompt_text = packaged_template.read_text(encoding="utf-8")
 
-        with open(template_path, "r", encoding="utf-8") as f:
-            prompt_data = yaml.safe_load(f)
+        prompt_data = yaml.safe_load(prompt_text)
 
         self._cache[prompt_name] = prompt_data
         return prompt_data
@@ -41,4 +54,11 @@ class PromptLoader:
 
     def list_prompts(self) -> list[str]:
         """List all available prompt templates."""
-        return [f.stem for f in self.templates_dir.glob("*.yml")]
+        names = {f.stem for f in self.templates_dir.glob("*.yml")}
+        packaged_templates = resources.files("libriscribe.prompt_templates")
+        names.update(
+            path.name.removesuffix(".yml")
+            for path in packaged_templates.iterdir()
+            if path.name.endswith(".yml")
+        )
+        return sorted(names)

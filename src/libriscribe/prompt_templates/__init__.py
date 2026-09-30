@@ -1,0 +1,1 @@
+"""Packaged default prompt templates."""

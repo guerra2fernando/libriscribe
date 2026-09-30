@@ -55,5 +55,4 @@ class ExternalPromptMixin:
             formatted_prompt,
             max_tokens=max_tokens,
             temperature=temperature,
-            operation=f"{prompt_name}_generation"
         )

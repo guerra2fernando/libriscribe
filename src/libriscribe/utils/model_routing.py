@@ -36,14 +36,14 @@ def get_default_model_for_provider(
 ) -> str:
     settings = settings or Settings()
     return {
-        "openai": settings.openai_model,
-        "claude": settings.claude_model,
-        "google_ai_studio": settings.google_ai_studio_model,
-        "deepseek": settings.deepseek_model,
-        "mistral": settings.mistral_model,
-        "openrouter": settings.openrouter_model,
-        "bedrock": settings.bedrock_model,
-        "bedrock_mantle": settings.bedrock_mantle_model,
+        "openai": getattr(settings, "openai_model", ""),
+        "claude": getattr(settings, "claude_model", ""),
+        "google_ai_studio": getattr(settings, "google_ai_studio_model", ""),
+        "deepseek": getattr(settings, "deepseek_model", ""),
+        "mistral": getattr(settings, "mistral_model", ""),
+        "openrouter": getattr(settings, "openrouter_model", ""),
+        "bedrock": getattr(settings, "bedrock_model", ""),
+        "bedrock_mantle": getattr(settings, "bedrock_mantle_model", ""),
     }.get(provider, "")
 
 

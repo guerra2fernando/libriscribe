@@ -9,6 +9,7 @@ from libriscribe.utils.file_utils import read_markdown_file, write_markdown_file
 from libriscribe.knowledge_base import ProjectKnowledgeBase
 from libriscribe.utils.llm_client import LLMClient
 from libriscribe.agents.content_reviewer import ContentReviewerAgent
+from libriscribe.utils.prompt_loader import PromptLoader
 # Add this import
 from rich.console import Console
 console = Console()
@@ -21,6 +22,7 @@ class EditorAgent(Agent):
 
     def __init__(self, llm_client: LLMClient):
         super().__init__("EditorAgent", llm_client)
+        self.prompt_loader = PromptLoader()
 
     def execute(
         self,
@@ -70,12 +72,26 @@ class EditorAgent(Agent):
             }
 
             console.print(f"✏️ [cyan]Editing Chapter {chapter_number} based on feedback...[/cyan]")
-            prompt = prompts.EDITOR_PROMPT.format(**prompt_data) + scene_titles_instruction
+            prompt_template = prompts.EDITOR_PROMPT
+            prompt_settings: dict[str, object] = {}
+            try:
+                prompt_template = self.prompt_loader.get_template("editor")
+                prompt_settings = self.prompt_loader.get_settings("editor")
+            except FileNotFoundError:
+                self.logger.debug("Using built-in editor prompt fallback.")
+
+            prompt = prompt_template.format(**prompt_data) + scene_titles_instruction
             if pacing_guidance:
                 prompt = pacing_guidance + "\n\n" + prompt
             if quality_guidance:
                 prompt = quality_guidance + "\n\n" + prompt
-            edited_response = self.llm_client.generate_content(prompt, max_tokens=32000)
+            max_tokens = int(prompt_settings.get("max_tokens", 32000))
+            temperature = float(prompt_settings.get("temperature", 0.7))
+            edited_response = self.llm_client.generate_content(
+                prompt,
+                max_tokens=max_tokens,
+                temperature=temperature,
+            )
             # --- KEY FIX: Use extract_json_from_markdown and check for None ---
             if "```" in edited_response:
                 start = edited_response.find("```") + 3
