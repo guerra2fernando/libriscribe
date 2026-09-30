@@ -131,7 +131,7 @@ graph TD
 *   **Character & worldbuilding context in scene writing:** Full profiles and key worldbuilding fields are prepended to every scene prompt.
 
 ### Local MCP integrations
-LibriScribe also provides a local MCP server and plugins for Claude Code and Codex. See the [local integrations guide](https://guerra2fernando.github.io/libriscribe/local-integrations) for installation, configuration, and tool usage.
+LibriScribe also provides a local MCP server and plugins for Claude Code and Codex. See the [local integrations guide](https://guerra2fernando.github.io/libriscribe/docs/local-integrations) for installation, configuration, and tool usage.
 
 ---
 
