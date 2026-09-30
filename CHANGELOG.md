@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.5.1 — 2026-09-30
+
+### Added
+
+- PyPI package metadata, MIT license, and a GitHub Actions Trusted Publishing workflow.
+- Optional provider extras so local keyword retrieval and MCP utilities do not install every provider SDK.
+- Actionable installation messages when a selected provider SDK is missing.
+
+### Compatibility
+
+- Install `libriscribe[openai]` for OpenAI, OpenRouter, or Bedrock Mantle; use `anthropic`, `google`, or `bedrock` for those providers.
+- Use `all-providers` to include all provider SDKs, and `semantic` only when on-device embeddings are wanted.
+- The base install can use DeepSeek and Mistral through its existing HTTP implementation, subject to provider API credentials and charges.
+
 ## 0.5.0 — 2026-09-30
 
 ### Added

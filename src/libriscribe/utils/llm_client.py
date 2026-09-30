@@ -1,20 +1,10 @@
 import json
 import logging
 import re
+from importlib import import_module
 from typing import Dict, Optional
 
-import anthropic
-import boto3
 import requests
-try:
-    from google import genai  # type: ignore[attr-defined]
-    from google.genai import types as google_genai_types  # type: ignore[attr-defined]
-    logging.getLogger("google.genai").setLevel(logging.WARNING)
-    logging.getLogger("google_genai.models").setLevel(logging.WARNING)
-except ImportError:  # pragma: no cover
-    genai = None  # type: ignore[assignment]
-    google_genai_types = None  # type: ignore[assignment]
-from openai import OpenAI
 
 from libriscribe.settings import Settings
 from libriscribe.utils.cost_tracker import CostTracker
@@ -31,6 +21,17 @@ logger = logging.getLogger(__name__)
 
 httpx_logger = logging.getLogger("httpx")
 httpx_logger.setLevel(logging.WARNING)
+
+
+def _require_provider_dependency(module_name: str, extra_name: str):
+    try:
+        return import_module(module_name)
+    except ImportError as exc:
+        raise ImportError(
+            f"This provider requires its optional dependency. Install it with "
+            f'`python -m pip install "libriscribe[{extra_name}]"`. '
+            "Provider API use may incur charges from that provider."
+        ) from exc
 
 
 class RecoverableLLMError(Exception):
@@ -62,21 +63,27 @@ class LLMClient:
         if provider == "openrouter":
             if not self.settings.openrouter_api_key:
                 raise ValueError("OpenRouter API key is not set.")
-            client = OpenAI(
+            openai_module = _require_provider_dependency("openai", "openai")
+            client = openai_module.OpenAI(
                 api_key=self.settings.openrouter_api_key,
                 base_url=self.settings.openrouter_base_url,
             )
         elif provider == "openai":
             if not self.settings.openai_api_key:
                 raise ValueError("OpenAI API key is not set.")
-            client = OpenAI(api_key=self.settings.openai_api_key)
+            openai_module = _require_provider_dependency("openai", "openai")
+            client = openai_module.OpenAI(api_key=self.settings.openai_api_key)
         elif provider == "claude":
             if not self.settings.claude_api_key:
                 raise ValueError("Claude API key is not set.")
+            anthropic = _require_provider_dependency("anthropic", "anthropic")
             client = anthropic.Anthropic(api_key=self.settings.claude_api_key)
         elif provider == "google_ai_studio":
             if not self.settings.google_ai_studio_api_key:
                 raise ValueError("Google AI Studio API key is not set.")
+            genai = _require_provider_dependency("google.genai", "google")
+            logging.getLogger("google.genai").setLevel(logging.WARNING)
+            logging.getLogger("google_genai.models").setLevel(logging.WARNING)
             client = genai.Client(api_key=self.settings.google_ai_studio_api_key)  # type: ignore[union-attr]
         elif provider == "deepseek":
             if not self.settings.deepseek_api_key:
@@ -87,6 +94,7 @@ class LLMClient:
                 raise ValueError("Mistral API key is not set.")
             client = None
         elif provider == "bedrock":
+            boto3 = _require_provider_dependency("boto3", "bedrock")
             session_kwargs: dict = {"region_name": self.settings.bedrock_region}
             if self.settings.bedrock_access_key_id and self.settings.bedrock_secret_access_key:
                 session_kwargs["aws_access_key_id"] = self.settings.bedrock_access_key_id
@@ -99,7 +107,8 @@ class LLMClient:
                 raise ValueError("Bedrock Mantle API key is not set.")
             if not self.settings.bedrock_mantle_base_url:
                 raise ValueError("Bedrock Mantle base URL is not set.")
-            client = OpenAI(
+            openai_module = _require_provider_dependency("openai", "openai")
+            client = openai_module.OpenAI(
                 api_key=self.settings.bedrock_mantle_api_key,
                 base_url=self.settings.bedrock_mantle_base_url,
             )
@@ -326,7 +335,8 @@ class LLMClient:
 
         if provider in {"openai", "openrouter"}:
             _raw_client = self._get_client_for_provider(provider)
-            assert isinstance(_raw_client, OpenAI), f"Expected OpenAI client for {provider}, got {type(_raw_client)}"
+            openai_module = _require_provider_dependency("openai", "openai")
+            assert isinstance(_raw_client, openai_module.OpenAI), f"Expected OpenAI client for {provider}, got {type(_raw_client)}"
             client = _raw_client
             request_prompt = prompt
             if provider == "openrouter":
@@ -363,6 +373,7 @@ class LLMClient:
 
         if provider == "google_ai_studio":
             client = self._get_client_for_provider(provider)
+            google_genai_types = import_module("google.genai.types")
             response = client.models.generate_content(  # type: ignore[union-attr, attr-defined]
                 model=model,
                 contents=prompt,
@@ -443,7 +454,8 @@ class LLMClient:
 
         if provider == "bedrock_mantle":
             _raw_client = self._get_client_for_provider(provider)
-            assert isinstance(_raw_client, OpenAI), f"Expected OpenAI client for {provider}, got {type(_raw_client)}"
+            openai_module = _require_provider_dependency("openai", "openai")
+            assert isinstance(_raw_client, openai_module.OpenAI), f"Expected OpenAI client for {provider}, got {type(_raw_client)}"
             mantle_client = _raw_client
             response = mantle_client.chat.completions.create(
                 model=model,

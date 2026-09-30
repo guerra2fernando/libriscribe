@@ -4,19 +4,21 @@ LibriScribe includes a local stdio MCP server and local plugin packages for Clau
 
 ## Install and configure
 
-From the repository root, install LibriScribe into the Python environment that your MCP client can run:
+Install LibriScribe into the Python environment that your MCP client can run. Add the provider extra you need if you plan to invoke generation tools (OpenAI example):
 
 ```powershell
-python -m pip install -e .
+python -m pip install "libriscribe[openai]"
 $env:PROJECTS_DIR = 'C:\Users\you\Books\libriscribe-projects'
 ```
 
 On macOS or Linux:
 
 ```bash
-python -m pip install -e .
+python -m pip install "libriscribe[openai]"
 export PROJECTS_DIR="$HOME/Books/libriscribe-projects"
 ```
+
+For a source checkout, replace the install command with `python -m pip install -e ".[openai]"`. Provider SDKs are optional; read-only project and keyword search tools work with the base package. Select `anthropic`, `google`, or `bedrock` for other providers, or `all-providers` to install all provider SDKs.
 
 `PROJECTS_DIR` is the only project root the tools access. Set it in the environment inherited by Claude Code or Codex. Without it, LibriScribe uses its package-relative `projects` directory, independent of the launch directory; with an editable install, that is this repository's `projects/` folder. Project calls use a direct child project identifier and never accept caller-provided paths.
 

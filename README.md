@@ -141,12 +141,12 @@ LibriScribe also provides a local MCP server and plugins for Claude Code and Cod
 
 ### 1. Installation
 
-Clone and install LibriScribe locally:
+Install LibriScribe from PyPI with the provider you plan to use. For OpenAI-compatible providers (OpenAI, OpenRouter, Bedrock Mantle):
 ```bash
-git clone https://github.com/guerra2fernando/libriscribe.git
-cd libriscribe
-pip install -e .
+python -m pip install "libriscribe[openai]"
 ```
+
+Other optional provider extras are `anthropic`, `google`, and `bedrock`. Install `all-providers` to include all provider SDKs. The base package keeps keyword retrieval and local MCP utilities available without provider SDKs. Add `semantic` (for example, `libriscribe[openai,semantic]`) only if you want on-device embeddings; the embedding model is a separate, explicit download. Provider API usage may incur charges from the selected provider.
 
 ### 2. Configuration
 
@@ -229,7 +229,7 @@ Manage and search your project's knowledge base and drafts directly:
     ```bash
     libriscribe retrieval search --project my_project --query "Mira Thorn"
     ```
-*   **Optional semantic and hybrid search:** Install `pip install -e ".[semantic]"`, prepare a local embedding model, and follow the [local retrieval guide](https://guerra2fernando.github.io/libriscribe/docs/retrieval-and-quality) for setup and hybrid search examples.
+*   **Optional semantic and hybrid search:** Install `python -m pip install "libriscribe[semantic]"`, prepare a local embedding model, and follow the [local retrieval guide](https://guerra2fernando.github.io/libriscribe/docs/retrieval-and-quality) for setup and hybrid search examples.
 *   **Lookup cross-references & co-occurrences of an entity:**
     ```bash
     libriscribe retrieval xref --project my_project --entity "Castle Iron"

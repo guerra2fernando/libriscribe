@@ -32,12 +32,12 @@ This guide walks you through installing LibriScribe, configuring model defaults,
 2. **Install LibriScribe**
 
    ```bash
-   pip install -e .
+   python -m pip install "libriscribe[openai]"
    ```
 
-Editable install is convenient if you plan to customize prompts or work on the codebase locally.
+Use the `anthropic`, `google`, or `bedrock` extra for those providers, or `all-providers` to install every provider SDK. OpenAI, OpenRouter, and Bedrock Mantle use the `openai` extra. To work from a cloned source checkout, use `python -m pip install -e ".[openai]"` instead. Provider SDKs are optional; the base package supports local keyword retrieval and MCP access without them.
 
-Optional local semantic search can be installed separately with `pip install -e ".[semantic]"`. It runs the sentence-transformers model on your device; no embedding API key or hosted vector service is used. Keyword search does not need this extra. Semantic mode uses local-only model loading by default, so place the model in the local Hugging Face cache or provide a local model path before rebuilding a semantic index.
+Optional local semantic search can be installed with `python -m pip install "libriscribe[semantic]"` (combine extras with a comma, for example `libriscribe[openai,semantic]`). It runs the sentence-transformers model on your device; no embedding API key or hosted vector service is used. Keyword search does not need this extra. Semantic mode uses local-only model loading by default, so explicitly download or place the model in the local Hugging Face cache or provide a local model path before rebuilding a semantic index.
 
 3. **Create your `.env` file**
 

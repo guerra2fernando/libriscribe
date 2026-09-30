@@ -2,13 +2,13 @@ import sys
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from libriscribe.utils.llm_client import LLMClient
+from libriscribe.utils.llm_client import LLMClient, _require_provider_dependency
 
 
 class ScriptedLLMClient(LLMClient):
@@ -42,6 +42,14 @@ class ScriptedLLMClient(LLMClient):
 
 
 class LLMFallbackTests(unittest.TestCase):
+    def test_missing_provider_sdk_explains_the_optional_extra(self):
+        with self.assertRaisesRegex(ImportError, r'libriscribe\[google\]'):
+            with patch(
+                "libriscribe.utils.llm_client.import_module",
+                side_effect=ModuleNotFoundError("google.genai"),
+            ):
+                _require_provider_dependency("google.genai", "google")
+
     def test_timeout_falls_back_to_next_route(self):
         client = ScriptedLLMClient(
             {
