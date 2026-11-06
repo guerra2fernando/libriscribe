@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     bedrock_mantle_api_key: str = ""
     bedrock_mantle_base_url: str = "https://bedrock-mantle.us-east-1.api.aws/v1"
     bedrock_mantle_model: str = "qwen.qwen3-coder-next"
+    cheaper_inference_api_key: str = ""
+    cheaper_inference_base_url: str = "https://api.cheaperinference.com/v1"
+    cheaper_inference_model: str = "gpt-5.4-mini"
     fallback_chain: str = ""
     projects_dir: str = str(Path(__file__).parent.parent.parent / "projects")
     default_llm: str = "openai"  # Set a default

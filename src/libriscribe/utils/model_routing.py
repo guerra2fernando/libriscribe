@@ -12,6 +12,7 @@ SUPPORTED_PROVIDERS = (
     "openrouter",
     "bedrock",
     "bedrock_mantle",
+    "cheaper_inference",
 )
 
 
@@ -44,6 +45,7 @@ def get_default_model_for_provider(
         "openrouter": getattr(settings, "openrouter_model", ""),
         "bedrock": getattr(settings, "bedrock_model", ""),
         "bedrock_mantle": getattr(settings, "bedrock_mantle_model", ""),
+        "cheaper_inference": getattr(settings, "cheaper_inference_model", ""),
     }.get(provider, "")
 
 

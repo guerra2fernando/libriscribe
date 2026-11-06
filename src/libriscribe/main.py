@@ -68,6 +68,7 @@ PROVIDER_LABELS = {
     "openrouter": "OpenRouter",
     "bedrock": "AWS Bedrock",
     "bedrock_mantle": "Bedrock Mantle",
+    "cheaper_inference": "Cheaper Inference",
 }
 
 AGENT_MODEL_OPTIONS = [
@@ -97,6 +98,7 @@ def get_default_model_for_provider(
         "openrouter": settings.openrouter_model,
         "bedrock": settings.bedrock_model,
         "bedrock_mantle": settings.bedrock_mantle_model,
+        "cheaper_inference": settings.cheaper_inference_model,
     }.get(provider, "")
 
 
@@ -129,6 +131,8 @@ def get_available_llm_providers(settings: Settings | None = None) -> list[str]:
             pass
     if settings.bedrock_mantle_api_key and settings.bedrock_mantle_base_url:
         available_llms.append("bedrock_mantle")
+    if settings.cheaper_inference_api_key:
+        available_llms.append("cheaper_inference")
 
     return available_llms
 

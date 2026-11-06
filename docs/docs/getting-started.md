@@ -19,6 +19,7 @@ This guide walks you through installing LibriScribe, configuring model defaults,
   - **OpenRouter:** [Get API Key](https://openrouter.ai/)
   - **AWS Bedrock:** AWS account with Bedrock access (explicit keys or instance profile / env `AWS_*` vars)
   - **Bedrock Mantle:** API key from your Bedrock Mantle account
+  - **Cheaper Inference:** [Get API Key](https://cheaperinference.com/)
 
 ## Installation Steps
 
@@ -35,7 +36,7 @@ This guide walks you through installing LibriScribe, configuring model defaults,
    python -m pip install "libriscribe[openai]"
    ```
 
-Use the `anthropic`, `google`, or `bedrock` extra for those providers, or `all-providers` to install every provider SDK. OpenAI, OpenRouter, and Bedrock Mantle use the `openai` extra. To work from a cloned source checkout, use `python -m pip install -e ".[openai]"` instead. Provider SDKs are optional; the base package supports local keyword retrieval and MCP access without them.
+Use the `anthropic`, `google`, or `bedrock` extra for those providers, or `all-providers` to install every provider SDK. OpenAI, OpenRouter, Bedrock Mantle, and Cheaper Inference use the `openai` extra. To work from a cloned source checkout, use `python -m pip install -e ".[openai]"` instead. Provider SDKs are optional; the base package supports local keyword retrieval and MCP access without them.
 
 Optional local semantic search can be installed with `python -m pip install "libriscribe[semantic]"` (combine extras with a comma, for example `libriscribe[openai,semantic]`). It runs the sentence-transformers model on your device; no embedding API key or hosted vector service is used. Keyword search does not need this extra. Semantic mode uses local-only model loading by default, so explicitly download or place the model in the local Hugging Face cache or provide a local model path before rebuilding a semantic index.
 
@@ -81,6 +82,11 @@ Optional local semantic search can be installed with `python -m pip install "lib
    BEDROCK_MANTLE_API_KEY=your_api_key_here
    BEDROCK_MANTLE_BASE_URL=https://bedrock-mantle.us-east-1.api.aws/v1
    BEDROCK_MANTLE_MODEL=qwen.qwen3-coder-next
+
+   # Cheaper Inference
+   CHEAPER_INFERENCE_API_KEY=your_api_key_here
+   CHEAPER_INFERENCE_BASE_URL=https://api.cheaperinference.com/v1
+   CHEAPER_INFERENCE_MODEL=gpt-5.4-mini
    ```
 
    LibriScribe uses these model values as **provider defaults**:
