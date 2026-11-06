@@ -112,6 +112,14 @@ class LLMClient:
                 api_key=self.settings.bedrock_mantle_api_key,
                 base_url=self.settings.bedrock_mantle_base_url,
             )
+        elif provider == "cheaper_inference":
+            if not self.settings.cheaper_inference_api_key:
+                raise ValueError("Cheaper Inference API key is not set.")
+            openai_module = _require_provider_dependency("openai", "openai")
+            client = openai_module.OpenAI(
+                api_key=self.settings.cheaper_inference_api_key,
+                base_url=self.settings.cheaper_inference_base_url,
+            )
         else:
             raise ValueError(f"Unsupported LLM provider: {provider}")
 
@@ -333,7 +341,7 @@ class LLMClient:
         provider = route.provider
         model = route.model
 
-        if provider in {"openai", "openrouter"}:
+        if provider in {"openai", "openrouter", "cheaper_inference"}:
             _raw_client = self._get_client_for_provider(provider)
             openai_module = _require_provider_dependency("openai", "openai")
             assert isinstance(_raw_client, openai_module.OpenAI), f"Expected OpenAI client for {provider}, got {type(_raw_client)}"

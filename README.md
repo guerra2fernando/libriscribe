@@ -84,7 +84,7 @@ graph TD
 ## ✨ Features
 
 ### 1. Unified LLM & OpenRouter Routing 🤖
-*   **Multi-Provider Support:** Run on **OpenAI**, **Anthropic Claude**, **Google Gemini**, **DeepSeek**, **Mistral**, **OpenRouter**, **AWS Bedrock**, or **Bedrock Mantle**.
+*   **Multi-Provider Support:** Run on **OpenAI**, **Anthropic Claude**, **Google Gemini**, **DeepSeek**, **Mistral**, **OpenRouter**, **AWS Bedrock**, **Bedrock Mantle**, or **Cheaper Inference**.
 *   **Intelligent Auto-Formatting:** Built-in JSON post-processing wrapper guarantees clean responses when routing through diverse models.
 *   **Full Backward Compatibility:** Swap models dynamically without breaking existing templates or agent behaviors.
 
@@ -141,7 +141,7 @@ LibriScribe also provides a local MCP server and plugins for Claude Code and Cod
 
 ### 1. Installation
 
-Install LibriScribe from PyPI with the provider you plan to use. For OpenAI-compatible providers (OpenAI, OpenRouter, Bedrock Mantle):
+Install LibriScribe from PyPI with the provider you plan to use. For OpenAI-compatible providers (OpenAI, OpenRouter, Bedrock Mantle, Cheaper Inference):
 ```bash
 python -m pip install "libriscribe[openai]"
 ```
@@ -185,6 +185,11 @@ BEDROCK_SECRET_ACCESS_KEY=your_secret_access_key
 BEDROCK_MANTLE_API_KEY=your_api_key_here
 BEDROCK_MANTLE_BASE_URL=https://bedrock-mantle.us-east-1.api.aws/v1
 BEDROCK_MANTLE_MODEL=qwen.qwen3-coder-next
+
+# Cheaper Inference
+CHEAPER_INFERENCE_API_KEY=your_api_key_here
+CHEAPER_INFERENCE_BASE_URL=https://api.cheaperinference.com/v1
+CHEAPER_INFERENCE_MODEL=gpt-5.4-mini
 
 # Optional global fallback chain
 # Entries may be provider names (use that provider's .env default),
